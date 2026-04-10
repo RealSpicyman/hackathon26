@@ -1,0 +1,47 @@
+//
+// Form editors.scss
+//
+
+// Tinymce
+form {
+    .tox-tinymce {
+        border: 1px solid $border-color !important;
+    }
+
+    .tox-toolbar-overlord {
+        background-color: var(--#{$prefix}secondary-bg) !important;
+    }
+    .tox {
+        &:not(.tox-tinymce-inline) {
+            .tox-editor-header {
+                box-shadow: var(--#{$prefix}box-shadow);
+            }
+        }
+
+        .tox-mbtn {
+            color: $body-secondary-color;
+
+            &:hover:not(:disabled):not(.tox-mbtn--active) {
+                background-color: $body-tertiary-bg;
+            }
+        }
+
+        .tox-tbtn {
+            &:hover {
+                color: $body-tertiary-color;
+                background-color: $body-tertiary-bg;
+            }
+        }
+
+        .tox-tbtn--disabled svg,
+        .tox-tbtn--disabled:hover svg,
+        .tox-tbtn:disabled svg,
+        .tox-tbtn:disabled:hover svg {
+            fill: $body-tertiary-color;
+        }
+
+        .tox-tbtn--bespoke {
+            background-color: $body-tertiary-bg;
+        }
+    }
+}
