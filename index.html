@@ -1,395 +1,242 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Philadelphia Property Search</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/css/icons.min.css">
-    <link rel="stylesheet" href="assets/css/app.min.css">
-    
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/css/icons.min.css" />
+    <link rel="stylesheet" href="assets/css/app.min.css" />
+
     <style>
-        #custom-address-options {
-            z-index: 1060;
-        }
-        #custom-address-options .dropdown-item {
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
-        }
-        #custom-address-options .dropdown-item:active {
-            background-color: #f8f9fa;
-            color: inherit;
-        }
+      #custom-address-options {
+        z-index: 1060;
+      }
+      #custom-address-options .dropdown-item {
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+      }
+      #custom-address-options .dropdown-item:active {
+        background-color: #f8f9fa;
+        color: inherit;
+      }
     </style>
-</head>
-<body class="bg-light">
+  </head>
+  <body class="bg-light">
     <main class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-12 col-xl-10">
-                
-                <section class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4 p-md-5">
-                        <div class="d-flex flex-column gap-2 mb-4">
-                            <span class="badge rounded-pill bg-primary text-white align-self-start">Property lookup</span>
-                            <h1 class="display-6 fw-semibold mb-0">Search up an address!</h1>
-                            <p class="text-muted fs-5 mb-0">Type a street address</p>
-                        </div>
+      <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+          <section class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+              <div class="d-flex flex-column gap-2 mb-4">
+                <span
+                  class="badge rounded-pill bg-primary text-white align-self-start"
+                  >Property lookup</span
+                >
+                <h1 class="display-6 fw-semibold mb-0">
+                  Search up an address!
+                </h1>
+                <p class="text-muted fs-5 mb-0">Type a street address</p>
+              </div>
 
-                        <form id="search-form" class="row g-3 align-items-center" autocomplete="off">
-                            <div class="col-12 col-lg-9 position-relative">
-                                <label class="visually-hidden" for="address-input">Address</label>
-                                <input id="address-input" type="text" placeholder="e.g. 123 Market St" class="form-control form-control-lg" required />
-                                
-                                <ul id="custom-address-options" class="dropdown-menu w-100 shadow rounded-3 border-0 mt-2" style="max-height: 320px; overflow-y: auto;"></ul>
-                            </div>
-                            <div class="col-12 col-lg-3 d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">Search</button>
-                            </div>
-                        </form>
+              <form
+                id="search-form"
+                class="row g-3 align-items-center"
+                autocomplete="off"
+              >
+                <div class="col-12 col-lg-9 position-relative">
+                  <label class="visually-hidden" for="address-input"
+                    >Address</label
+                  >
+                  <input
+                    id="address-input"
+                    type="text"
+                    placeholder="e.g. 123 Market St"
+                    class="form-control form-control-lg"
+                    required
+                  />
 
-                        <p id="status-text" class="small mt-3 mb-0 text-muted">Enter an address to search the dataset.</p>
-                    </div>
-                </section>
+                  <ul
+                    id="custom-address-options"
+                    class="dropdown-menu w-100 shadow rounded-3 border-0 mt-2"
+                    style="max-height: 320px; overflow-y: auto"
+                  ></ul>
+                </div>
+                <div class="col-12 col-lg-3 d-grid">
+                  <button type="submit" class="btn btn-primary btn-lg">
+                    Search
+                  </button>
+                </div>
+              </form>
 
-                <section id="ai-panel" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
-                    <div class="card-body p-4 bg-white rounded-4 border border-warning border-2">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="badge bg-warning text-dark">Not in Database</span>
-                            <h3 class="h5 fw-semibold mb-0">AI Prediction Required</h3>
-                        </div>
-                        <p class="text-muted small mb-4">We couldn't find exact utility data for that address. Enter the building's basic characteristics to generate an AI-estimated efficiency grade.</p>
-                        
-                        <form id="ai-form" class="row g-3">
-                            <div class="col-md-4">
-                                <label for="ai-sqft" class="form-label small fw-bold">Square Footage</label>
-                                <input type="number" id="ai-sqft" class="form-control" placeholder="e.g. 65000" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="ai-year" class="form-label small fw-bold">Year Built</label>
-                                <input type="number" id="ai-year" class="form-control" placeholder="e.g. 1985" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="ai-type" class="form-label small fw-bold">Property Type</label>
-                                <select id="ai-type" class="form-select" required>
-                                    <option value="" disabled selected>Select Type...</option>
-                                    <option value="Office">Office</option>
-                                    <option value="Multifamily Housing">Multifamily Housing</option>
-                                    <option value="Retail Store">Retail Store</option>
-                                    <option value="Self-Storage Facility">Self-Storage Facility</option>
-                                    <option value="Wholesale Distribution Center">Warehouse / Distribution</option>
-                                </select>
-                            </div>
-                            <div class="col-12 text-end mt-4">
-                                <button type="submit" class="btn btn-dark" id="ai-submit-btn">Predict Grade with AI</button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-
-                <section id="result-panel" class="card border-0 shadow-sm rounded-4 d-none" aria-live="polite">
-                    <div class="card-body p-4 p-md-5">
-                        <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-4">
-                            <div>
-                                <p id="result-status" class="text-uppercase text-muted fw-semibold small mb-2">Result</p>
-                                <h2 id="result-title" class="h3 fw-semibold mb-0">Property</h2>
-                            </div>
-                            <span id="result-badge" class="badge rounded-pill bg-secondary text-white">Matched</span>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <div class="border rounded-4 bg-light p-3 h-100">
-                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Address</span>
-                                    <strong id="result-address" class="d-block fs-6 fw-semibold">-</strong>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="border rounded-4 bg-light p-3 h-100">
-                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Type</span>
-                                    <strong id="result-type" class="d-block fs-6 fw-semibold">-</strong>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="border rounded-4 bg-light p-3 h-100">
-                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Square Footage</span>
-                                    <strong id="result-sqft" class="d-block fs-6 fw-semibold">-</strong>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="border rounded-4 bg-light p-3 h-100">
-                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Grade</span>
-                                    <strong id="result-grade" class="d-block fs-6 fw-semibold">-</strong>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="border rounded-4 bg-light p-3">
-                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Confidence / Source</span>
-                                    <strong id="result-confidence" class="d-block fs-6 fw-semibold">-</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+              <p id="status-text" class="small mt-3 mb-0 text-muted">
+                Enter an address to search the dataset.
+              </p>
             </div>
+          </section>
+
+          <section
+            id="ai-panel"
+            class="card border-0 shadow-sm rounded-4 mb-4 d-none"
+          >
+            <div
+              class="card-body p-4 bg-white rounded-4 border border-warning border-2"
+            >
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-warning text-dark">Not in Database</span>
+                <h3 class="h5 fw-semibold mb-0">AI Prediction Required</h3>
+              </div>
+              <p class="text-muted small mb-4">
+                We couldn't find exact utility data for that address. Enter the
+                building's basic characteristics to generate an AI-estimated
+                efficiency grade.
+              </p>
+
+              <form id="ai-form" class="row g-3">
+                <div class="col-md-4">
+                  <label for="ai-sqft" class="form-label small fw-bold"
+                    >Square Footage</label
+                  >
+                  <input
+                    type="number"
+                    id="ai-sqft"
+                    class="form-control"
+                    placeholder="e.g. 65000"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="ai-year" class="form-label small fw-bold"
+                    >Year Built</label
+                  >
+                  <input
+                    type="number"
+                    id="ai-year"
+                    class="form-control"
+                    placeholder="e.g. 1985"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="ai-type" class="form-label small fw-bold"
+                    >Property Type</label
+                  >
+                  <select id="ai-type" class="form-select" required>
+                    <option value="" disabled selected>Select Type...</option>
+                    <option value="Office">Office</option>
+                    <option value="Multifamily Housing">
+                      Multifamily Housing
+                    </option>
+                    <option value="Retail Store">Retail Store</option>
+                    <option value="Self-Storage Facility">
+                      Self-Storage Facility
+                    </option>
+                    <option value="Wholesale Distribution Center">
+                      Warehouse / Distribution
+                    </option>
+                  </select>
+                </div>
+                <div class="col-12 text-end mt-4">
+                  <button type="submit" class="btn btn-dark" id="ai-submit-btn">
+                    Predict Grade with AI
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section
+            id="result-panel"
+            class="card border-0 shadow-sm rounded-4 d-none"
+            aria-live="polite"
+          >
+            <div class="card-body p-4 p-md-5">
+              <div
+                class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-4"
+              >
+                <div>
+                  <p
+                    id="result-status"
+                    class="text-uppercase text-muted fw-semibold small mb-2"
+                  >
+                    Result
+                  </p>
+                  <h2 id="result-title" class="h3 fw-semibold mb-0">
+                    Property
+                  </h2>
+                </div>
+                <span
+                  id="result-badge"
+                  class="badge rounded-pill bg-secondary text-white"
+                  >Matched</span
+                >
+              </div>
+
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-4 bg-light p-3 h-100">
+                    <span
+                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
+                      >Address</span
+                    >
+                    <strong id="result-address" class="d-block fs-6 fw-semibold"
+                      >-</strong
+                    >
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-4 bg-light p-3 h-100">
+                    <span
+                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
+                      >Type</span
+                    >
+                    <strong id="result-type" class="d-block fs-6 fw-semibold"
+                      >-</strong
+                    >
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-4 bg-light p-3 h-100">
+                    <span
+                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
+                      >Square Footage</span
+                    >
+                    <strong id="result-sqft" class="d-block fs-6 fw-semibold"
+                      >-</strong
+                    >
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <div class="border rounded-4 bg-light p-3 h-100">
+                    <span
+                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
+                      >Grade</span
+                    >
+                    <strong id="result-grade" class="d-block fs-6 fw-semibold"
+                      >-</strong
+                    >
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="border rounded-4 bg-light p-3">
+                    <span
+                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
+                      >Confidence / Source</span
+                    >
+                    <strong
+                      id="result-confidence"
+                      class="d-block fs-6 fw-semibold"
+                      >-</strong
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
+      </div>
     </main>
-
-    <script>
-        function resolveApiBase() {
-            const params = new URLSearchParams(window.location.search);
-            const apiBaseParam = params.get('apiBase');
-
-            if (apiBaseParam) {
-                return apiBaseParam.replace(/\/$/, '');
-            }
-
-            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                return window.location.origin;
-            }
-
-            return 'http://127.0.0.1:8000';
-        }
-
-        const apiBase = resolveApiBase();
-        const isNgrokRequest = /ngrok-free\.app|ngrok\.io/i.test(apiBase);
-        const defaultFetchOptions = isNgrokRequest
-            ? { headers: { 'ngrok-skip-browser-warning': 'true' } }
-            : {};
-        
-        // Form Elements
-        const form = document.getElementById('search-form');
-        const input = document.getElementById('address-input');
-        const addressOptions = document.getElementById('custom-address-options');
-        const searchButton = form.querySelector('button');
-        const statusText = document.getElementById('status-text');
-        let suggestAbortController = null;
-        let suggestRequestId = 0;
-        
-        // AI Panel Elements
-        const aiPanel = document.getElementById('ai-panel');
-        const aiForm = document.getElementById('ai-form');
-        const aiSqft = document.getElementById('ai-sqft');
-        const aiYear = document.getElementById('ai-year');
-        const aiType = document.getElementById('ai-type');
-        const aiSubmitBtn = document.getElementById('ai-submit-btn');
-
-        // Result Panel Elements
-        const resultPanel = document.getElementById('result-panel');
-        const resultStatus = document.getElementById('result-status');
-        const resultTitle = document.getElementById('result-title');
-        const resultBadge = document.getElementById('result-badge');
-        const resultAddress = document.getElementById('result-address');
-        const resultType = document.getElementById('result-type');
-        const resultSqft = document.getElementById('result-sqft');
-        const resultGrade = document.getElementById('result-grade');
-        const resultConfidence = document.getElementById('result-confidence');
-
-        function setLoading(isLoading) {
-            input.disabled = isLoading;
-            searchButton.disabled = isLoading;
-            searchButton.textContent = isLoading ? 'Searching...' : 'Search';
-        }
-
-        function showMessage(message, isError = false) {
-            statusText.textContent = message;
-            statusText.classList.toggle('text-danger', isError);
-            statusText.classList.toggle('text-muted', !isError);
-        }
-
-        function showResult(data) {
-            resultPanel.classList.remove('d-none');
-            
-            if (data.status === 'found_in_database') {
-                resultStatus.textContent = 'Matched record';
-                resultBadge.textContent = 'Verified Data';
-                resultBadge.className = 'badge rounded-pill bg-success text-white';
-            } else if (data.status === 'ai_predicted') {
-                resultStatus.textContent = 'AI Generation Complete';
-                resultBadge.textContent = 'AI Prediction';
-                resultBadge.className = 'badge rounded-pill bg-info text-dark';
-            }
-            
-            resultTitle.textContent = data.name || 'Property';
-            resultAddress.textContent = data.address || input.value.trim().toUpperCase();
-            resultType.textContent = data.type || '-';
-            resultSqft.textContent = data.sqft ? Number(data.sqft).toLocaleString() : '-';
-            
-            resultGrade.textContent = data.grade || '-';
-            
-            if(data.grade === 'A') resultGrade.className = 'd-block fs-5 fw-bold text-success';
-            else if(data.grade === 'B') resultGrade.className = 'd-block fs-5 fw-bold text-primary';
-            else if(data.grade === 'C') resultGrade.className = 'd-block fs-5 fw-bold text-warning';
-            else if(data.grade === 'D') resultGrade.className = 'd-block fs-5 fw-bold text-danger';
-            else resultGrade.className = 'd-block fs-6 fw-semibold';
-
-            resultConfidence.textContent = data.confidence || '-';
-        }
-
-        function clearSuggestions() {
-            addressOptions.innerHTML = '';
-            addressOptions.classList.remove('show');
-        }
-
-        // Global function to handle suggestion selection
-        window.selectSuggestion = function(event, value) {
-            event.preventDefault();
-            input.value = value;
-            clearSuggestions();
-        };
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!input.contains(event.target) && !addressOptions.contains(event.target)) {
-                clearSuggestions();
-            }
-        });
-
-        async function updateAddressSuggestions() {
-            const query = input.value.trim();
-
-            if (query.length < 5) {
-                clearSuggestions();
-                return;
-            }
-
-            suggestRequestId += 1;
-            const currentRequestId = suggestRequestId;
-
-            if (suggestAbortController) {
-                suggestAbortController.abort();
-            }
-
-            suggestAbortController = new AbortController();
-
-            try {
-                const url = `${apiBase}/api/suggest?query=${encodeURIComponent(query)}`;
-                const response = await fetch(url, {
-                    ...defaultFetchOptions,
-                    signal: suggestAbortController.signal
-                });
-
-                if (!response.ok) throw new Error('Suggestion request failed.');
-                const data = await response.json();
-
-                if (currentRequestId !== suggestRequestId) return;
-
-                const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
-                clearSuggestions();
-
-                if (suggestions.length > 0) {
-                    addressOptions.classList.add('show');
-                    
-                    suggestions.forEach((suggestion) => {
-                        const li = document.createElement('li');
-                        const escapedSuggestion = suggestion.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        
-                        // Skote-style Dropdown Item Structure
-                        li.innerHTML = `
-                            <a class="dropdown-item d-flex align-items-center py-2 px-3" href="#" onclick="selectSuggestion(event, '${escapedSuggestion}')">
-                                <div class="flex-shrink-0 me-3">
-                                    <img src="https://placehold.co/48x48/eff2f7/495057?text=🏢" alt="Building" class="rounded bg-light border" style="width: 40px; height: 40px; object-fit: cover;">
-                                </div>
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <h6 class="mb-0 text-truncate font-size-15 fw-semibold text-dark">${suggestion}</h6>
-                                    <p class="text-muted mb-0 small text-truncate">Philadelphia, PA</p>
-                                </div>
-                            </a>
-                        `;
-                        addressOptions.appendChild(li);
-                    });
-                }
-            } catch (error) {
-                if (error.name === 'AbortError') return;
-                clearSuggestions();
-                console.error(error);
-            }
-        }
-
-        async function runSearch() {
-            const query = input.value.trim();
-            if (!query) return;
-
-            setLoading(true);
-            showMessage('Searching the dataset...');
-            resultPanel.classList.add('d-none');
-            aiPanel.classList.add('d-none');
-            clearSuggestions(); // Hide suggestions on search
-
-            try {
-                const url = `${apiBase}/api/search?address=${encodeURIComponent(query)}`;
-                const response = await fetch(url, defaultFetchOptions);
-                const data = await response.json();
-
-                if (!response.ok) throw new Error('Search request failed.');
-                if (!data) throw new Error('The server returned an empty response.');
-
-                if (data?.error) {
-                    showMessage(data.error, true);
-                    aiPanel.classList.remove('d-none');
-                    return;
-                }
-
-                showResult(data);
-                showMessage(`Showing exact match from city dataset.`);
-            } catch (error) {
-                console.error(error);
-                showMessage(error.message || 'Unable to reach the API.', true);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        async function runAIPrediction() {
-            const sqft = aiSqft.value;
-            const year = aiYear.value;
-            const type = aiType.value;
-
-            aiSubmitBtn.disabled = true;
-            aiSubmitBtn.textContent = 'Calculating...';
-
-            try {
-                const url = `${apiBase}/api/predict?sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}`;
-                
-                const response = await fetch(url, defaultFetchOptions);
-                const data = await response.json();
-
-                if (data.error) throw new Error(data.error);
-
-                aiPanel.classList.add('d-none');
-                showResult(data);
-                showMessage(`AI Prediction successfully generated.`);
-            } catch (error) {
-                console.error(error);
-                alert("AI Error: " + error.message);
-            } finally {
-                aiSubmitBtn.disabled = false;
-                aiSubmitBtn.textContent = 'Predict Grade with AI';
-            }
-        }
-
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            runSearch();
-        });
-
-        input.addEventListener('input', function () {
-            updateAddressSuggestions();
-        });
-
-        // Add keyboard support to easily hide the custom dropdown
-        input.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                clearSuggestions();
-            }
-        });
-
-        aiForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            runAIPrediction();
-        });
-
-    </script>
-</body>
+    <script src="assets/js/scripts.js"></script>
+  </body>
 </html>

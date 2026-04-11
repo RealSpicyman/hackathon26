@@ -103,36 +103,37 @@ def suggest_addresses(query: str):
  
 # AI MODEL PREDICTION
 @app.get("/api/predict")
-def predict_property_grade(sqft: int, year_built: int, property_type: str):
+def predict_property_grade(sqft: int, year_built: int, property_type: str, lat: float, lon: float):
     """
     This endpoint uses the trained Machine Learning model to predict a grade.
-    Example: /api/predict?sqft=65000&year_built=2015&property_type=Office
+    Example: /api/predict?sqft=65000&year_built=2015&property_type=Office&lat=39.95&lon=-75.16
     """
     try:
         # 1. Package the user's input into a Pandas DataFrame.
-        # CRITICAL: The column names must exactly match the ones we used in trainModel.py!
+        # Ensure column names match EXACTLY what the model saw during training.
         input_data = pd.DataFrame([{
             'year_built': year_built,
             'total_floor_area_bld_pk_ft2': sqft,
-            'primary_prop_type_epa_calc': property_type
+            'primary_prop_type_epa_calc': property_type,
+            'latitude': lat,
+            'longitude': lon
         }])
 
         # 2. Feed the data to the AI model
         prediction_array = model.predict(input_data)
-        
-        # The model returns an array of predictions (even if it's just one), so we grab the first item [0]
         predicted_grade = prediction_array[0]
 
         # 3. Return the AI's answer
         return {
             "status": "ai_predicted",
-            "name": "Unknown Property",
+            "name": "AI Generated Estimate",
             "type": property_type,
             "sqft": sqft,
             "year_built": year_built,
             "grade": str(predicted_grade),
-            "confidence": "AI Estimated (Not in City Database)"
+            "confidence": f"AI Estimated (Location: {lat:.4f}, {lon:.4f})"
         }
         
     except Exception as e:
+        # This will now catch if the model expects different column names
         return {"error": f"AI Prediction Failed: {str(e)}"}
