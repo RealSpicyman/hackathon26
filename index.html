@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,8 +130,17 @@
     </main>
 
     <script>
-        const apiBaseSearch = 'http://127.0.0.1:8000/api/search?address=';
-        const apiBasePredict = 'http://127.0.0.1:8000/api/predict?';
+        // --- 1. SET YOUR NGROK URL HERE ---
+        const NGROK_URL = 'https://e77d-144-118-77-135.ngrok-free.app'; 
+        
+        const apiBaseSearch = `${NGROK_URL}/api/search?address=`;
+        const apiBasePredict = `${NGROK_URL}/api/predict?`;
+        
+        // --- 2. GLOBAL FETCH HEADERS ---
+        // This is required to bypass the Ngrok free-tier warning page so it returns JSON
+        const ngrokHeaders = {
+            "ngrok-skip-browser-warning": "69420"
+        };
         
         // Form Elements
         const form = document.getElementById('search-form');
@@ -208,14 +218,17 @@
             if (!query) return;
 
             setLoading(true);
-            showMessage('Searching the local property dataset...');
+            showMessage('Searching the remote dataset...');
             
             // Hide panels from previous searches
             resultPanel.classList.add('d-none');
             aiPanel.classList.add('d-none');
 
             try {
-                const response = await fetch(apiBaseSearch + encodeURIComponent(query));
+                // Add the bypass headers to the fetch request
+                const response = await fetch(apiBaseSearch + encodeURIComponent(query), {
+                    headers: ngrokHeaders
+                });
                 const data = await response.json();
 
                 if (!response.ok) throw new Error('Search request failed.');
@@ -235,7 +248,8 @@
                 showResult(data);
                 showMessage(`Showing exact match from city dataset.`);
             } catch (error) {
-                showMessage(error.message || 'Unable to reach the API.', true);
+                console.error(error);
+                showMessage(error.message || 'Unable to reach the API. Check your Ngrok URL.', true);
             } finally {
                 setLoading(false);
             }
@@ -252,7 +266,11 @@
 
             try {
                 const url = `${apiBasePredict}sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}`;
-                const response = await fetch(url);
+                
+                // Add the bypass headers to the fetch request
+                const response = await fetch(url, {
+                    headers: ngrokHeaders
+                });
                 const data = await response.json();
 
                 if (data.error) throw new Error(data.error);
@@ -262,6 +280,7 @@
                 showResult(data);
                 showMessage(`AI Prediction successfully generated.`);
             } catch (error) {
+                console.error(error);
                 alert("AI Error: " + error.message);
             } finally {
                 aiSubmitBtn.disabled = false;
