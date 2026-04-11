@@ -95,6 +95,7 @@ startBtn.addEventListener("click", () => {
     // Allow CSS transition to catch the block display state
     setTimeout(() => {
       stage2.classList.add("visible");
+      document.documentElement.style.setProperty('--bg-accent', '#bea4c6')
       input.focus(); // Auto-focus input for UX
     }, 50);
   }, 600); // Matches CSS transition duration

@@ -1,17 +1,7 @@
 :root {
-  color-scheme: light;
-  --bg: #f2efe8;
-  --bg-accent: #d8e6e0;
-  --panel: rgba(255, 255, 255, 0.84);
-  --text: #18212b;
-  --muted: #62707f;
-  --border: rgba(24, 33, 43, 0.12);
-  --shadow: 0 24px 60px rgba(24, 33, 43, 0.12);
-  --accent: #124559;
-  --accent-2: #e07a5f;
-  --success: #1f7a4d;
-  --warning: #a86a00;
-  --danger: #b23a48;
+  --bg: white;
+  --bg-accent: #a4c6a6;
+  transition: --bg-accent 0.5s ease-in-out;
 }
 
 * {
@@ -25,10 +15,7 @@ html, body {
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(224, 122, 95, 0.22), transparent 34%),
-    radial-gradient(circle at right 20%, rgba(18, 69, 89, 0.14), transparent 30%),
-    linear-gradient(180deg, var(--bg), var(--bg-accent));
+  background: linear-gradient(180deg, var(--bg), var(--bg-accent));
 }
 
 .app-shell {
