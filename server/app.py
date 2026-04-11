@@ -126,7 +126,7 @@ def predict_property_grade(sqft: int, year_built: int, property_type: str, lat: 
         # 3. Return the AI's answer
         return {
             "status": "ai_predicted",
-            "name": "AI Generated Estimate",
+            "name": "AI Estimate",
             "type": property_type,
             "sqft": sqft,
             "year_built": year_built,
