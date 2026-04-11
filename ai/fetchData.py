@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 # The engineered URL
-url = "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/properties_reported_2024/FeatureServer/0/query?outFields=*&where=primary_prop_type_epa_calc+IN+('Multifamily+Housing'%2C+'Office'%2C+'Retail+Store'%2C+'Wholesale+Distribution+Center'%2C+'Self-Storage+Facility')+AND+site_eui_kbtuft2+IS+NOT+NULL&outSR=4326&f=geojson&resultRecordCount=10000"
+url = "https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/properties_reported_2024/FeatureServer/0/query?outFields=*&where=primary_prop_type_epa_calc+IN+('Multifamily+Housing'%2C+'Office'%2C+'Retail+Store'%2C+'Wholesale+Distribution+Center'%2C+'Self-Storage+Facility')+AND+site_eui_kbtuft2+IS+NOT+NULL&outSR=4326&f=geojson&"
 
 # Fetch the data
 response = requests.get(url)
