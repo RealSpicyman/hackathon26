@@ -3,12 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slumlord Manager</title>
+    <title>Philadelphia Property Search</title>
 
-    <link rel="stylesheet" href="..\css\pretty.css">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/icons.min.css">
+    <link rel="stylesheet" href="assets/css/app.min.css">
 </head>
-<body>
-    <input type="text" placeholder="Address Me..." class="input">
-                                                                                          
+<body class="bg-light">
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                
+                <section class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex flex-column gap-2 mb-4">
+                            <span class="badge rounded-pill bg-primary text-white align-self-start">Property lookup</span>
+                            <h1 class="display-6 fw-semibold mb-0">Search up an address!</h1>
+                            <p class="text-muted fs-5 mb-0">Type a street address</p>
+                        </div>
+
+                        <form id="search-form" class="row g-3 align-items-center" autocomplete="off">
+                            <div class="col-12 col-lg-9">
+                                <label class="visually-hidden" for="address-input">Address</label>
+                                <input id="address-input" type="text" list="address-suggestions" placeholder="e.g. 123 Market St" class="form-control form-control-lg" required />
+                                
+                                <datalist id="address-suggestions">
+                                    <option value="Market St">
+                                    <option value="Broad St">
+                                    <option value="Chestnut St">
+                                    <option value="Walnut St">
+                                    <option value="JFK Blvd">
+                                    <option value="Spring Garden St">
+                                </datalist>
+                            </div>
+                            <div class="col-12 col-lg-3 d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Search</button>
+                            </div>
+                        </form>
+
+                        <p id="status-text" class="small mt-3 mb-0 text-muted">Enter an address to search the dataset.</p>
+                    </div>
+                </section>
+
+                <section id="ai-panel" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+                    <div class="card-body p-4 bg-white rounded-4 border border-warning border-2">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-warning text-dark">Not in Database</span>
+                            <h3 class="h5 fw-semibold mb-0">AI Prediction Required</h3>
+                        </div>
+                        <p class="text-muted small mb-4">We couldn't find exact utility data for that address. Enter the building's basic characteristics to generate an AI-estimated efficiency grade.</p>
+                        
+                        <form id="ai-form" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="ai-sqft" class="form-label small fw-bold">Square Footage</label>
+                                <input type="number" id="ai-sqft" class="form-control" placeholder="e.g. 65000" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="ai-year" class="form-label small fw-bold">Year Built</label>
+                                <input type="number" id="ai-year" class="form-control" placeholder="e.g. 1985" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="ai-type" class="form-label small fw-bold">Property Type</label>
+                                <select id="ai-type" class="form-select" required>
+                                    <option value="" disabled selected>Select Type...</option>
+                                    <option value="Office">Office</option>
+                                    <option value="Multifamily Housing">Multifamily Housing</option>
+                                    <option value="Retail Store">Retail Store</option>
+                                    <option value="Self-Storage Facility">Self-Storage Facility</option>
+                                    <option value="Wholesale Distribution Center">Warehouse / Distribution</option>
+                                </select>
+                            </div>
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-dark" id="ai-submit-btn">Predict Grade with AI</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section id="result-panel" class="card border-0 shadow-sm rounded-4 d-none" aria-live="polite">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-4">
+                            <div>
+                                <p id="result-status" class="text-uppercase text-muted fw-semibold small mb-2">Result</p>
+                                <h2 id="result-title" class="h3 fw-semibold mb-0">Property</h2>
+                            </div>
+                            <span id="result-badge" class="badge rounded-pill bg-secondary text-white">Matched</span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="border rounded-4 bg-light p-3 h-100">
+                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Address</span>
+                                    <strong id="result-address" class="d-block fs-6 fw-semibold">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="border rounded-4 bg-light p-3 h-100">
+                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Type</span>
+                                    <strong id="result-type" class="d-block fs-6 fw-semibold">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="border rounded-4 bg-light p-3 h-100">
+                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Square Footage</span>
+                                    <strong id="result-sqft" class="d-block fs-6 fw-semibold">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="border rounded-4 bg-light p-3 h-100">
+                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Grade</span>
+                                    <strong id="result-grade" class="d-block fs-6 fw-semibold">-</strong>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="border rounded-4 bg-light p-3">
+                                    <span class="d-block text-muted small text-uppercase fw-semibold mb-1">Confidence / Source</span>
+                                    <strong id="result-confidence" class="d-block fs-6 fw-semibold">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const apiBaseSearch = 'http://127.0.0.1:8000/api/search?address=';
+        const apiBasePredict = 'http://127.0.0.1:8000/api/predict?';
+        
+        // Form Elements
+        const form = document.getElementById('search-form');
+        const input = document.getElementById('address-input');
+        const searchButton = form.querySelector('button');
+        const statusText = document.getElementById('status-text');
+        
+        // AI Panel Elements
+        const aiPanel = document.getElementById('ai-panel');
+        const aiForm = document.getElementById('ai-form');
+        const aiSqft = document.getElementById('ai-sqft');
+        const aiYear = document.getElementById('ai-year');
+        const aiType = document.getElementById('ai-type');
+        const aiSubmitBtn = document.getElementById('ai-submit-btn');
+
+        // Result Panel Elements
+        const resultPanel = document.getElementById('result-panel');
+        const resultStatus = document.getElementById('result-status');
+        const resultTitle = document.getElementById('result-title');
+        const resultBadge = document.getElementById('result-badge');
+        const resultAddress = document.getElementById('result-address');
+        const resultType = document.getElementById('result-type');
+        const resultSqft = document.getElementById('result-sqft');
+        const resultGrade = document.getElementById('result-grade');
+        const resultConfidence = document.getElementById('result-confidence');
+
+        function setLoading(isLoading) {
+            input.disabled = isLoading;
+            searchButton.disabled = isLoading;
+            searchButton.textContent = isLoading ? 'Searching...' : 'Search';
+        }
+
+        function showMessage(message, isError = false) {
+            statusText.textContent = message;
+            statusText.classList.toggle('text-danger', isError);
+            statusText.classList.toggle('text-muted', !isError);
+        }
+
+        // Handles rendering the final box, adapting colors whether it was DB or AI
+        function showResult(data) {
+            resultPanel.classList.remove('d-none');
+            
+            if (data.status === 'found_in_database') {
+                resultStatus.textContent = 'Matched record';
+                resultBadge.textContent = 'Verified Data';
+                resultBadge.className = 'badge rounded-pill bg-success text-white';
+            } else if (data.status === 'ai_predicted') {
+                resultStatus.textContent = 'AI Generation Complete';
+                resultBadge.textContent = 'AI Prediction';
+                resultBadge.className = 'badge rounded-pill bg-info text-dark';
+            }
+            
+            resultTitle.textContent = data.name || 'Property';
+            resultAddress.textContent = data.address || input.value.trim().toUpperCase();
+            resultType.textContent = data.type || '-';
+            resultSqft.textContent = data.sqft ? Number(data.sqft).toLocaleString() : '-';
+            
+            // Render the grade
+            resultGrade.textContent = data.grade || '-';
+            
+            // Add custom coloring based on the grade itself
+            if(data.grade === 'A') resultGrade.className = 'd-block fs-5 fw-bold text-success';
+            else if(data.grade === 'B') resultGrade.className = 'd-block fs-5 fw-bold text-primary';
+            else if(data.grade === 'C') resultGrade.className = 'd-block fs-5 fw-bold text-warning';
+            else if(data.grade === 'D') resultGrade.className = 'd-block fs-5 fw-bold text-danger';
+            else resultGrade.className = 'd-block fs-6 fw-semibold';
+
+            resultConfidence.textContent = data.confidence || '-';
+        }
+
+        // TRIGGER 1: The Main Search
+        async function runSearch() {
+            const query = input.value.trim();
+
+            if (!query) return;
+
+            setLoading(true);
+            showMessage('Searching the local property dataset...');
+            
+            // Hide panels from previous searches
+            resultPanel.classList.add('d-none');
+            aiPanel.classList.add('d-none');
+
+            try {
+                const response = await fetch(apiBaseSearch + encodeURIComponent(query));
+                const data = await response.json();
+
+                if (!response.ok) throw new Error('Search request failed.');
+
+                if (!data) {
+                    throw new Error('The server returned an empty response.');
+                }
+
+                if (data?.error) {
+                    // Address not found! Trigger the AI fallback.
+                    showMessage(data.error, true);
+                    aiPanel.classList.remove('d-none');
+                    return;
+                }
+
+                // If found, show it directly
+                showResult(data);
+                showMessage(`Showing exact match from city dataset.`);
+            } catch (error) {
+                showMessage(error.message || 'Unable to reach the API.', true);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // TRIGGER 2: The AI Form Submit
+        async function runAIPrediction() {
+            const sqft = aiSqft.value;
+            const year = aiYear.value;
+            const type = aiType.value;
+
+            aiSubmitBtn.disabled = true;
+            aiSubmitBtn.textContent = 'Calculating...';
+
+            try {
+                const url = `${apiBasePredict}sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                // Success! Hide the AI form and show the final result
+                aiPanel.classList.add('d-none');
+                showResult(data);
+                showMessage(`AI Prediction successfully generated.`);
+            } catch (error) {
+                alert("AI Error: " + error.message);
+            } finally {
+                aiSubmitBtn.disabled = false;
+                aiSubmitBtn.textContent = 'Predict Grade with AI';
+            }
+        }
+
+        // Event Listeners
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            runSearch();
+        });
+
+        aiForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            runAIPrediction();
+        });
+
+    </script>
 </body>
 </html>
