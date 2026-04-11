@@ -16,6 +16,7 @@ body {
   margin: 0;
   color: var(--text);
   background: linear-gradient(180deg, var(--bg), var(--bg-accent));
+  overflow-y:hidden;
 }
 
 .app-shell {
@@ -285,4 +286,12 @@ h1 {
   animation: fadeIn 5s ease-in forwards;
   display: inline;
   float: left;
+}
+
+.skyline {
+    position:absolute;
+    bottom:0;
+    z-index:-1;
+    opacity:25%;
+
 }
