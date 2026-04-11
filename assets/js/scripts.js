@@ -1,4 +1,14 @@
-// script.js contents
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize Bootstrap Tooltips
+  var tooltipTriggerList = [].slice.call(
+    document.querySelectorAll('[data-bs-toggle="tooltip"]'),
+  );
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
+
+// ================= API BASE RESOLVER =================
 function resolveApiBase() {
   const params = new URLSearchParams(window.location.search);
   const apiBaseParam = params.get("apiBase");
@@ -22,6 +32,14 @@ const isNgrokRequest = /ngrok-free\.app|ngrok\.io/i.test(apiBase);
 const defaultFetchOptions = isNgrokRequest
   ? { headers: { "ngrok-skip-browser-warning": "true" } }
   : {};
+
+// ================= DOM ELEMENTS =================
+// Stage Elements
+const stage1 = document.getElementById("stage-1");
+const mainContent = document.getElementById("main-content");
+const stage2 = document.getElementById("stage-2");
+const stage3 = document.getElementById("stage-3");
+const startBtn = document.getElementById("start-btn");
 
 // Form Elements
 const form = document.getElementById("search-form");
@@ -65,10 +83,50 @@ const resultConfidence = document.getElementById("result-confidence");
 window.currentDisplayName = "";
 window.currentAddressMatches = [];
 
+// ================= STAGE ANIMATION LOGIC =================
+
+// Handle Start Button (Transition Stage 1 -> Stage 2)
+startBtn.addEventListener("click", () => {
+  stage1.classList.remove("visible");
+  setTimeout(() => {
+    stage1.classList.add("d-none");
+    mainContent.classList.remove("d-none");
+
+    // Allow CSS transition to catch the block display state
+    setTimeout(() => {
+      stage2.classList.add("visible");
+      input.focus(); // Auto-focus input for UX
+    }, 50);
+  }, 600); // Matches CSS transition duration
+});
+
+let hideTimeout;
+
+// Hides Stage 3 smoothly
+function resetPanels() {
+  stage3.classList.remove("visible");
+  hideTimeout = setTimeout(() => {
+    aiPanel.classList.add("d-none");
+    resultPanel.classList.add("d-none");
+  }, 600);
+}
+
+// Swaps which panel is visible inside Stage 3 and fades it in
+function revealPanel(panelToShow) {
+  clearTimeout(hideTimeout);
+  aiPanel.classList.add("d-none");
+  resultPanel.classList.add("d-none");
+
+  panelToShow.classList.remove("d-none");
+
+  setTimeout(() => {
+    stage3.classList.add("visible");
+  }, 50);
+}
+
+// ================= HELPER FUNCTIONS =================
 function setMultiAddressTooltip(totalMatches) {
-  if (!multiAddressInfoBtn) {
-    return;
-  }
+  if (!multiAddressInfoBtn) return;
 
   const title =
     totalMatches > 1
@@ -78,14 +136,11 @@ function setMultiAddressTooltip(totalMatches) {
   multiAddressInfoBtn.setAttribute("title", title);
   multiAddressInfoBtn.setAttribute("aria-label", title);
 
-  if (!hasBootstrap) {
-    return;
-  }
+  if (!hasBootstrap) return;
 
   if (multiAddressTooltip) {
     multiAddressTooltip.dispose();
   }
-
   multiAddressTooltip = new bootstrap.Tooltip(multiAddressInfoBtn);
 }
 
@@ -107,9 +162,8 @@ function openMultipleAddressPopup() {
   if (
     !window.currentAddressMatches ||
     window.currentAddressMatches.length === 0
-  ) {
+  )
     return;
-  }
 
   multiAddressList.innerHTML = "";
   window.currentAddressMatches.forEach((address) => {
@@ -136,7 +190,9 @@ function closeMultipleAddressPopup() {
 function setLoading(isLoading) {
   input.disabled = isLoading;
   searchButton.disabled = isLoading;
-  searchButton.textContent = isLoading ? "Searching..." : "Search";
+  searchButton.innerHTML = isLoading
+    ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Searching...'
+    : "Search";
 }
 
 function showMessage(message, isError = false) {
@@ -146,19 +202,21 @@ function showMessage(message, isError = false) {
 }
 
 function showResult(data) {
-  resultPanel.classList.remove("d-none");
+  // Trigger animation to show Result panel
+  revealPanel(resultPanel);
 
   if (data.status === "found_in_database") {
-    resultStatus.textContent = "Matched record";
+    resultStatus.innerHTML =
+      '<i class="mdi mdi-check-circle-outline me-1"></i>Matched record';
     resultBadge.textContent = "Verified Data";
     resultBadge.className = "badge rounded-pill bg-success text-white";
   } else if (data.status === "ai_predicted") {
-    resultStatus.textContent = "AI Estimate";
+    resultStatus.innerHTML =
+      '<i class="mdi mdi-robot-outline me-1"></i>AI Estimate';
     resultBadge.textContent = "AI Prediction";
     resultBadge.className = "badge rounded-pill bg-info text-dark";
   }
 
-  // Check if the data indicates multiple locations
   if (data.multipleLocations) {
     resultTitle.classList.add("d-none");
     resultStatus.classList.add("d-none");
@@ -205,6 +263,7 @@ document.addEventListener("click", function (event) {
   }
 });
 
+// ================= CORE API FUNCTIONS =================
 async function updateAddressSuggestions() {
   const query = input.value.trim();
   if (query.length < 5) {
@@ -218,7 +277,6 @@ async function updateAddressSuggestions() {
   if (suggestAbortController) {
     suggestAbortController.abort();
   }
-
   suggestAbortController = new AbortController();
 
   try {
@@ -247,16 +305,16 @@ async function updateAddressSuggestions() {
           .replace(/"/g, "&quot;");
 
         li.innerHTML = `
-                    <a class="dropdown-item d-flex align-items-center py-2 px-3" href="#" onclick="selectSuggestion(event, '${escapedSuggestion}')">
-                        <div class="flex-shrink-0 me-3">
-                            <img src="https://placehold.co/48x48/eff2f7/495057?text=B" alt="Building" class="rounded bg-light border" style="width: 40px; height: 40px; object-fit: cover;">
-                        </div>
-                        <div class="flex-grow-1 overflow-hidden">
-                            <h6 class="mb-0 text-truncate font-size-15 fw-semibold text-dark">${suggestion}</h6>
-                            <p class="text-muted mb-0 small text-truncate">Philadelphia, PA</p>
-                        </div>
-                    </a>
-                `;
+                            <a class="dropdown-item d-flex align-items-center py-2 px-3" href="#" onclick="selectSuggestion(event, '${escapedSuggestion}')">
+                                <div class="flex-shrink-0 me-3">
+                                    <img src="https://placehold.co/48x48/eff2f7/495057?text=B" alt="Building" class="rounded bg-light border" style="width: 40px; height: 40px; object-fit: cover;">
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="mb-0 text-truncate font-size-15 fw-semibold text-dark">${suggestion}</h6>
+                                    <p class="text-muted mb-0 small text-truncate">Philadelphia, PA</p>
+                                </div>
+                            </a>
+                        `;
         addressOptions.appendChild(li);
       });
     }
@@ -273,8 +331,10 @@ async function runSearch() {
 
   setLoading(true);
   showMessage("Searching the dataset...");
-  resultPanel.classList.add("d-none");
-  aiPanel.classList.add("d-none");
+
+  // Initiate exit animation for Stage 3
+  resetPanels();
+
   hideMultipleAddressHint();
   clearSuggestions();
 
@@ -310,6 +370,7 @@ async function runSearch() {
             typeof display_name === "string"
               ? display_name.split(",")[0].trim()
               : "";
+
           showMultipleAddressHint(allMatches);
 
           if (allMatches.length > 1) {
@@ -341,7 +402,8 @@ async function runSearch() {
         hideMultipleAddressHint();
       }
 
-      aiPanel.classList.remove("d-none");
+      // Animate AI Form Panel in
+      revealPanel(aiPanel);
       return;
     }
 
@@ -349,6 +411,7 @@ async function runSearch() {
     window.currentDisplayName = "";
     window.currentAddressMatches = [];
     hideMultipleAddressHint();
+
     showResult(data);
     showMessage(`Showing exact match from city dataset.`);
   } catch (error) {
@@ -370,7 +433,8 @@ async function runAIPrediction() {
       : [39.9526, -75.1652];
 
   aiSubmitBtn.disabled = true;
-  aiSubmitBtn.textContent = "Calculating...";
+  aiSubmitBtn.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Calculating...';
 
   try {
     const url = `${apiBase}/api/predict?sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}&lat=${coords[0].trim()}&lon=${coords[1].trim()}`;
@@ -383,9 +447,12 @@ async function runAIPrediction() {
       data.name = window.currentDisplayName;
     }
 
-    aiPanel.classList.add("d-none");
-    showResult(data);
-    showMessage(`AI Prediction successfully generated.`);
+    // Cross-fade to final result smoothly
+    resetPanels();
+    setTimeout(() => {
+      showResult(data);
+      showMessage(`AI Prediction successfully generated.`);
+    }, 600);
   } catch (error) {
     console.error(error);
     alert("AI Error: " + error.message);
@@ -395,7 +462,7 @@ async function runAIPrediction() {
   }
 }
 
-// Event Listeners
+// ================= EVENT LISTENERS =================
 form.addEventListener("submit", function (event) {
   event.preventDefault();
   runSearch();
@@ -406,9 +473,7 @@ input.addEventListener("input", function () {
 });
 
 input.addEventListener("keydown", function (event) {
-  if (event.key === "Escape") {
-    clearSuggestions();
-  }
+  if (event.key === "Escape") clearSuggestions();
 });
 
 aiForm.addEventListener("submit", function (event) {
@@ -418,13 +483,9 @@ aiForm.addEventListener("submit", function (event) {
 
 if (multiAddressInfoBtn) {
   setMultiAddressTooltip(0);
-  multiAddressInfoBtn.addEventListener("click", function () {
-    openMultipleAddressPopup();
-  });
+  multiAddressInfoBtn.addEventListener("click", openMultipleAddressPopup);
 }
 
 if (multiAddressCloseBtn) {
-  multiAddressCloseBtn.addEventListener("click", function () {
-    closeMultipleAddressPopup();
-  });
+  multiAddressCloseBtn.addEventListener("click", closeMultipleAddressPopup);
 }
