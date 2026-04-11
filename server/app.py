@@ -1,0 +1,110 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
+import joblib
+from pathlib import Path
+import sys
+
+app = FastAPI()
+
+# This allows your HTML file to securely talk to this Python server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+print("Starting server... Loading brain...")
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATASET_PATH = PROJECT_ROOT / "philly_buildings_graded.csv"
+MODEL_PATH = PROJECT_ROOT / "property_rating_model.pkl"
+
+# Check if files actually exist before trying to read them
+if not DATASET_PATH.exists() or not MODEL_PATH.exists():
+    print(f"\nCRITICAL ERROR: Could not find the required files!")
+    print(f"Looking for data in: {DATASET_PATH}")
+    print(f"Looking for model in: {MODEL_PATH}")
+    print("Please make sure the files are in the correct folder.")
+    sys.exit(1) # Kill the server immediately
+
+df = pd.read_csv(DATASET_PATH, on_bad_lines='skip')
+
+# Strip any invisible spaces from all column headers
+df.columns = df.columns.str.strip()
+
+df['street_address'] = df['street_address'].astype(str).str.lower().str.strip()
+model = joblib.load(MODEL_PATH)
+print("Brain successfully loaded!")
+
+@app.get("/")
+def home():
+    return {"message": "Philadelphia Property AI is running!"}
+
+@app.get("/api/search")
+def search_property(address: str):
+    """
+    Search the database for an exact address match.
+    """
+    search_query = address.lower().strip()
+    
+    # Added regex=False to prevent crashes if the user types special characters like (.) or (#)
+    match = df[df['street_address'].str.contains(search_query, na=False, regex=False)]
+    
+    if not match.empty:
+        best_match = match.iloc[0]
+        prop_name = str(best_match['property_name'])
+        if prop_name == 'nan':
+            prop_name = "Property Name Not Provided"
+
+        return {
+            "status": "found_in_database",
+            "name": prop_name,
+            "address": str(best_match['street_address']).title(),
+            "type": str(best_match['primary_prop_type_epa_calc']),
+            "sqft": int(best_match['total_floor_area_bld_pk_ft2']),
+            "grade": str(best_match['Grade']),
+            "confidence": "100% (Calculated from City Benchmarks)"
+        }
+    
+    # If the code makes it down here, it MUST return this dictionary!
+    return {"error": "Property not found in the 2024 Benchmarking Dataset."}
+
+ 
+# AI MODEL PREDICTION
+@app.get("/api/predict")
+def predict_property_grade(sqft: int, year_built: int, property_type: str):
+    """
+    This endpoint uses the trained Machine Learning model to predict a grade.
+    Example: /api/predict?sqft=65000&year_built=2015&property_type=Office
+    """
+    try:
+        # 1. Package the user's input into a Pandas DataFrame.
+        # CRITICAL: The column names must exactly match the ones we used in trainModel.py!
+        input_data = pd.DataFrame([{
+            'year_built': year_built,
+            'total_floor_area_bld_pk_ft2': sqft,
+            'primary_prop_type_epa_calc': property_type
+        }])
+
+        # 2. Feed the data to the AI model
+        prediction_array = model.predict(input_data)
+        
+        # The model returns an array of predictions (even if it's just one), so we grab the first item [0]
+        predicted_grade = prediction_array[0]
+
+        # 3. Return the AI's answer
+        return {
+            "status": "ai_predicted",
+            "name": "Unknown Property",
+            "type": property_type,
+            "sqft": sqft,
+            "year_built": year_built,
+            "grade": str(predicted_grade),
+            "confidence": "AI Estimated (Not in City Database)"
+        }
+        
+    except Exception as e:
+        return {"error": f"AI Prediction Failed: {str(e)}"}
