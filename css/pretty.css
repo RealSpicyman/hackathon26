@@ -273,3 +273,16 @@ h1 {
     align-items: center;
     justify-content: center;
 }
+
+@keyframes fadeIn{
+  from {opacity: 0;}
+  tp { opacity: 1;}
+}
+
+.fade-in-text {
+  font-size: 20px;
+  margin-bottom: 30px;
+  animation: fadeIn 5s ease-in forwards;
+  display: inline;
+  float: left;
+}
