@@ -207,12 +207,12 @@ function showResult(data) {
 
   if (data.status === "found_in_database") {
     resultStatus.innerHTML =
-      '<i class="mdi mdi-check-circle-outline me-1"></i>Matched record';
+      '<i class="bi bi-check-circle me-1"></i>Matched record';
     resultBadge.textContent = "Verified Data";
     resultBadge.className = "badge rounded-pill bg-success text-white";
   } else if (data.status === "ai_predicted") {
     resultStatus.innerHTML =
-      '<i class="mdi mdi-robot-outline me-1"></i>AI Estimate';
+      '<i class="bi bi-robot me-1"></i>AI Estimate';
     resultBadge.textContent = "AI Prediction";
     resultBadge.className = "badge rounded-pill bg-info text-dark";
   }
