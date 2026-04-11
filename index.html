@@ -9,13 +9,27 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/css/icons.min.css">
     <link rel="stylesheet" href="assets/css/app.min.css">
+    
+    <style>
+        #custom-address-options {
+            z-index: 1060;
+        }
+        #custom-address-options .dropdown-item {
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        #custom-address-options .dropdown-item:active {
+            background-color: #f8f9fa;
+            color: inherit;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <main class="container py-5">
         <div class="row justify-content-center">
             <div class="col-12 col-xl-10">
                 
-                <section class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <section class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4 p-md-5">
                         <div class="d-flex flex-column gap-2 mb-4">
                             <span class="badge rounded-pill bg-primary text-white align-self-start">Property lookup</span>
@@ -24,18 +38,11 @@
                         </div>
 
                         <form id="search-form" class="row g-3 align-items-center" autocomplete="off">
-                            <div class="col-12 col-lg-9">
+                            <div class="col-12 col-lg-9 position-relative">
                                 <label class="visually-hidden" for="address-input">Address</label>
-                                <input id="address-input" type="text" list="address-suggestions" placeholder="e.g. 123 Market St" class="form-control form-control-lg" required />
+                                <input id="address-input" type="text" placeholder="e.g. 123 Market St" class="form-control form-control-lg" required />
                                 
-                                <datalist id="address-suggestions">
-                                    <option value="Market St">
-                                    <option value="Broad St">
-                                    <option value="Chestnut St">
-                                    <option value="Walnut St">
-                                    <option value="JFK Blvd">
-                                    <option value="Spring Garden St">
-                                </datalist>
+                                <ul id="custom-address-options" class="dropdown-menu w-100 shadow rounded-3 border-0 mt-2" style="max-height: 320px; overflow-y: auto;"></ul>
                             </div>
                             <div class="col-12 col-lg-3 d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">Search</button>
@@ -130,23 +137,35 @@
     </main>
 
     <script>
-        // --- 1. SET YOUR NGROK URL HERE ---
-        const NGROK_URL = 'https://e77d-144-118-77-135.ngrok-free.app'; 
-        
-        const apiBaseSearch = `${NGROK_URL}/api/search?address=`;
-        const apiBasePredict = `${NGROK_URL}/api/predict?`;
-        
-        // --- 2. GLOBAL FETCH HEADERS ---
-        // This is required to bypass the Ngrok free-tier warning page so it returns JSON
-        const ngrokHeaders = {
-            "ngrok-skip-browser-warning": "69420"
-        };
+        function resolveApiBase() {
+            const params = new URLSearchParams(window.location.search);
+            const apiBaseParam = params.get('apiBase');
+
+            if (apiBaseParam) {
+                return apiBaseParam.replace(/\/$/, '');
+            }
+
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                return window.location.origin;
+            }
+
+            return 'http://127.0.0.1:8000';
+        }
+
+        const apiBase = resolveApiBase();
+        const isNgrokRequest = /ngrok-free\.app|ngrok\.io/i.test(apiBase);
+        const defaultFetchOptions = isNgrokRequest
+            ? { headers: { 'ngrok-skip-browser-warning': 'true' } }
+            : {};
         
         // Form Elements
         const form = document.getElementById('search-form');
         const input = document.getElementById('address-input');
+        const addressOptions = document.getElementById('custom-address-options');
         const searchButton = form.querySelector('button');
         const statusText = document.getElementById('status-text');
+        let suggestAbortController = null;
+        let suggestRequestId = 0;
         
         // AI Panel Elements
         const aiPanel = document.getElementById('ai-panel');
@@ -179,7 +198,6 @@
             statusText.classList.toggle('text-muted', !isError);
         }
 
-        // Handles rendering the final box, adapting colors whether it was DB or AI
         function showResult(data) {
             resultPanel.classList.remove('d-none');
             
@@ -198,10 +216,8 @@
             resultType.textContent = data.type || '-';
             resultSqft.textContent = data.sqft ? Number(data.sqft).toLocaleString() : '-';
             
-            // Render the grade
             resultGrade.textContent = data.grade || '-';
             
-            // Add custom coloring based on the grade itself
             if(data.grade === 'A') resultGrade.className = 'd-block fs-5 fw-bold text-success';
             else if(data.grade === 'B') resultGrade.className = 'd-block fs-5 fw-bold text-primary';
             else if(data.grade === 'C') resultGrade.className = 'd-block fs-5 fw-bold text-warning';
@@ -211,51 +227,120 @@
             resultConfidence.textContent = data.confidence || '-';
         }
 
-        // TRIGGER 1: The Main Search
-        async function runSearch() {
+        function clearSuggestions() {
+            addressOptions.innerHTML = '';
+            addressOptions.classList.remove('show');
+        }
+
+        // Global function to handle suggestion selection
+        window.selectSuggestion = function(event, value) {
+            event.preventDefault();
+            input.value = value;
+            clearSuggestions();
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!input.contains(event.target) && !addressOptions.contains(event.target)) {
+                clearSuggestions();
+            }
+        });
+
+        async function updateAddressSuggestions() {
             const query = input.value.trim();
 
+            if (query.length < 5) {
+                clearSuggestions();
+                return;
+            }
+
+            suggestRequestId += 1;
+            const currentRequestId = suggestRequestId;
+
+            if (suggestAbortController) {
+                suggestAbortController.abort();
+            }
+
+            suggestAbortController = new AbortController();
+
+            try {
+                const url = `${apiBase}/api/suggest?query=${encodeURIComponent(query)}`;
+                const response = await fetch(url, {
+                    ...defaultFetchOptions,
+                    signal: suggestAbortController.signal
+                });
+
+                if (!response.ok) throw new Error('Suggestion request failed.');
+                const data = await response.json();
+
+                if (currentRequestId !== suggestRequestId) return;
+
+                const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+                clearSuggestions();
+
+                if (suggestions.length > 0) {
+                    addressOptions.classList.add('show');
+                    
+                    suggestions.forEach((suggestion) => {
+                        const li = document.createElement('li');
+                        const escapedSuggestion = suggestion.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        
+                        // Skote-style Dropdown Item Structure
+                        li.innerHTML = `
+                            <a class="dropdown-item d-flex align-items-center py-2 px-3" href="#" onclick="selectSuggestion(event, '${escapedSuggestion}')">
+                                <div class="flex-shrink-0 me-3">
+                                    <img src="https://placehold.co/48x48/eff2f7/495057?text=🏢" alt="Building" class="rounded bg-light border" style="width: 40px; height: 40px; object-fit: cover;">
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="mb-0 text-truncate font-size-15 fw-semibold text-dark">${suggestion}</h6>
+                                    <p class="text-muted mb-0 small text-truncate">Philadelphia, PA</p>
+                                </div>
+                            </a>
+                        `;
+                        addressOptions.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                clearSuggestions();
+                console.error(error);
+            }
+        }
+
+        async function runSearch() {
+            const query = input.value.trim();
             if (!query) return;
 
             setLoading(true);
-            showMessage('Searching the remote dataset...');
-            
-            // Hide panels from previous searches
+            showMessage('Searching the dataset...');
             resultPanel.classList.add('d-none');
             aiPanel.classList.add('d-none');
+            clearSuggestions(); // Hide suggestions on search
 
             try {
-                // Add the bypass headers to the fetch request
-                const response = await fetch(apiBaseSearch + encodeURIComponent(query), {
-                    headers: ngrokHeaders
-                });
+                const url = `${apiBase}/api/search?address=${encodeURIComponent(query)}`;
+                const response = await fetch(url, defaultFetchOptions);
                 const data = await response.json();
 
                 if (!response.ok) throw new Error('Search request failed.');
-
-                if (!data) {
-                    throw new Error('The server returned an empty response.');
-                }
+                if (!data) throw new Error('The server returned an empty response.');
 
                 if (data?.error) {
-                    // Address not found! Trigger the AI fallback.
                     showMessage(data.error, true);
                     aiPanel.classList.remove('d-none');
                     return;
                 }
 
-                // If found, show it directly
                 showResult(data);
                 showMessage(`Showing exact match from city dataset.`);
             } catch (error) {
                 console.error(error);
-                showMessage(error.message || 'Unable to reach the API. Check your Ngrok URL.', true);
+                showMessage(error.message || 'Unable to reach the API.', true);
             } finally {
                 setLoading(false);
             }
         }
 
-        // TRIGGER 2: The AI Form Submit
         async function runAIPrediction() {
             const sqft = aiSqft.value;
             const year = aiYear.value;
@@ -265,17 +350,13 @@
             aiSubmitBtn.textContent = 'Calculating...';
 
             try {
-                const url = `${apiBasePredict}sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}`;
+                const url = `${apiBase}/api/predict?sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}`;
                 
-                // Add the bypass headers to the fetch request
-                const response = await fetch(url, {
-                    headers: ngrokHeaders
-                });
+                const response = await fetch(url, defaultFetchOptions);
                 const data = await response.json();
 
                 if (data.error) throw new Error(data.error);
 
-                // Success! Hide the AI form and show the final result
                 aiPanel.classList.add('d-none');
                 showResult(data);
                 showMessage(`AI Prediction successfully generated.`);
@@ -288,10 +369,20 @@
             }
         }
 
-        // Event Listeners
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             runSearch();
+        });
+
+        input.addEventListener('input', function () {
+            updateAddressSuggestions();
+        });
+
+        // Add keyboard support to easily hide the custom dropdown
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                clearSuggestions();
+            }
         });
 
         aiForm.addEventListener('submit', function (event) {

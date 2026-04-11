@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse 
+from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import joblib
 from pathlib import Path
@@ -21,6 +23,8 @@ print("Starting server... Loading brain...")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATASET_PATH = PROJECT_ROOT / "philly_buildings_graded.csv"
 MODEL_PATH = PROJECT_ROOT / "property_rating_model.pkl"
+ASSETS_PATH = PROJECT_ROOT / "assets"
+INDEX_PATH = PROJECT_ROOT / "index.html"
 
 # Check if files actually exist before trying to read them
 if not DATASET_PATH.exists() or not MODEL_PATH.exists():
@@ -36,12 +40,18 @@ df = pd.read_csv(DATASET_PATH, on_bad_lines='skip')
 df.columns = df.columns.str.strip()
 
 df['street_address'] = df['street_address'].astype(str).str.lower().str.strip()
+address_index = df['street_address'].dropna().drop_duplicates().tolist()
 model = joblib.load(MODEL_PATH)
 print("Brain successfully loaded!")
 
+app.mount("/assets", StaticFiles(directory=str(ASSETS_PATH)), name="assets")
+
+
+# --- UPDATED: Serve the HTML file when someone visits the root URL ---
 @app.get("/")
-def home():
-    return {"message": "Philadelphia Property AI is running!"}
+def serve_home():
+    return FileResponse(str(INDEX_PATH))
+
 
 @app.get("/api/search")
 def search_property(address: str):
@@ -71,6 +81,24 @@ def search_property(address: str):
     
     # If the code makes it down here, it MUST return this dictionary!
     return {"error": "Property not found in the 2024 Benchmarking Dataset."}
+
+
+@app.get("/api/suggest")
+def suggest_addresses(query: str):
+    """
+    Return matching street address suggestions once user input is specific enough.
+    """
+    search_query = query.lower().strip()
+    if len(search_query) < 5:
+        return {"suggestions": []}
+
+    suggestions = [
+        address.title()
+        for address in address_index
+        if search_query in address
+    ]
+
+    return {"suggestions": suggestions}
 
  
 # AI MODEL PREDICTION
