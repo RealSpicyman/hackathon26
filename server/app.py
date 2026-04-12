@@ -24,6 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATASET_PATH = PROJECT_ROOT / "philly_buildings_graded.csv"
 MODEL_PATH = PROJECT_ROOT / "property_rating_model.pkl"
 ASSETS_PATH = PROJECT_ROOT / "assets"
+CSS_PATH = PROJECT_ROOT / "css"
 INDEX_PATH = PROJECT_ROOT / "index.html"
 
 # Check if files actually exist before trying to read them
@@ -45,6 +46,7 @@ model = joblib.load(MODEL_PATH)
 print("Brain successfully loaded!")
 
 app.mount("/assets", StaticFiles(directory=str(ASSETS_PATH)), name="assets")
+app.mount("/css", StaticFiles(directory=str(CSS_PATH)), name="css")
 
 
 # --- UPDATED: Serve the HTML file when someone visits the root URL ---

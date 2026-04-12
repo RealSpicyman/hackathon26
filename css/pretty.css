@@ -16,7 +16,7 @@ body {
   margin: 0;
   color: var(--text);
   background: linear-gradient(180deg, var(--bg), var(--bg-accent));
-  overflow-y:hidden;
+
 }
 
 .app-shell {
@@ -275,6 +275,33 @@ h1 {
     justify-content: center;
 }
 
+.about-card {
+  width: min(90%, 640px);
+  border: 2px solid #2f5d50 !important;
+  opacity: 0;
+  transform: translateY(10px);
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s ease, max-height 0.45s ease;
+}
+
+.about-card .card-body h2 {
+  font-size: 1.5rem;
+}
+
+.about-card .card-body p {
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.about-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 520px;
+  pointer-events: auto;
+}
+
 @keyframes fadeIn{
   from {opacity: 0;}
   tp { opacity: 1;}
@@ -295,7 +322,35 @@ h1 {
     bottom:0;
     z-index:-1;
     opacity:25%;
-    filter: hue-rotate(75deg) saturate(1.2) contrast(1.1);
-    brightness: .9;
+  filter: hue-rotate(75deg) saturate(1.2) contrast(1.1) brightness(0.9);
 
+}
+
+.benchmark-tabs .nav-link {
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  color: #5e6283;
+  font-weight: 600;
+}
+
+.benchmark-tabs .nav-link.active {
+  background-color: #556ee6;
+  color: #ffffff;
+}
+
+.legend-card {
+  border-color: rgba(85, 110, 230, 0.2) !important;
+}
+
+.legend-list {
+  padding-left: 1.2rem;
+}
+
+.legend-list li {
+  margin-bottom: 0.65rem;
+  color: #495057;
+}
+
+.legend-list li:last-child {
+  margin-bottom: 0;
 }

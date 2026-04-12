@@ -40,6 +40,8 @@ const mainContent = document.getElementById("main-content");
 const stage2 = document.getElementById("stage-2");
 const stage3 = document.getElementById("stage-3");
 const startBtn = document.getElementById("start-btn");
+const aboutBtn = document.getElementById("about-btn");
+const aboutCard = document.getElementById("about-card");
 
 // Form Elements
 const form = document.getElementById("search-form");
@@ -112,6 +114,14 @@ startBtn.addEventListener("click", () => {
     }, 50);
   }, 600); // Matches CSS transition duration
 });
+
+if (aboutBtn && aboutCard) {
+  aboutBtn.addEventListener("click", () => {
+    aboutCard.classList.toggle("visible");
+    const expanded = aboutCard.classList.contains("visible");
+    aboutBtn.setAttribute("aria-expanded", String(expanded));
+  });
+}
 
 let hideTimeout;
 
@@ -209,6 +219,7 @@ function setLoading(isLoading) {
 }
 
 function showMessage(message, isError = false) {
+  if (!statusText) return;
   statusText.textContent = message;
   statusText.classList.toggle("text-danger", isError);
   statusText.classList.toggle("text-muted", !isError);
@@ -609,9 +620,28 @@ function renderDatabaseCharts(
   ghgPercent,
   waterPercent,
 ) {
+  const normalizeToHundred = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return 0;
+    }
+
+    if (numericValue >= 0 && numericValue <= 1) {
+      return Number((numericValue * 100).toFixed(1));
+    }
+
+    return Number(numericValue.toFixed(1));
+  };
+
+  const normalizedEnergyScore = normalizeToHundred(energyScore);
+  const normalizedCompositeScore = normalizeToHundred(compositeScore);
+  const normalizedEuiPercent = normalizeToHundred(euiPercent);
+  const normalizedGhgPercent = normalizeToHundred(ghgPercent);
+  const normalizedWaterPercent = normalizeToHundred(waterPercent);
+
   // 1. Energy Star Radial Bar (Skote Primary Color)
   var energyOptions = {
-    series: [energyScore || 0],
+    series: [normalizedEnergyScore],
     chart: { height: 220, type: "radialBar" },
     plotOptions: {
       radialBar: {
@@ -623,7 +653,7 @@ function renderDatabaseCharts(
             fontWeight: 600,
             color: "#495057",
             formatter: function (val) {
-              return val;
+              return `${Number(val).toFixed(1)}`;
             },
           },
         },
@@ -635,7 +665,7 @@ function renderDatabaseCharts(
 
   // 2. Composite Score Radial Bar (Skote Success Color)
   var compositeOptions = {
-    series: [compositeScore || 0],
+    series: [normalizedCompositeScore],
     chart: { height: 220, type: "radialBar" },
     plotOptions: {
       radialBar: {
@@ -647,7 +677,7 @@ function renderDatabaseCharts(
             fontWeight: 600,
             color: "#495057",
             formatter: function (val) {
-              return val;
+              return `${Number(val).toFixed(1)}`;
             },
           },
         },
@@ -662,7 +692,7 @@ function renderDatabaseCharts(
     series: [
       {
         name: "Percentile",
-        data: [euiPercent || 0, ghgPercent || 0, waterPercent || 0],
+        data: [normalizedEuiPercent, normalizedGhgPercent, normalizedWaterPercent],
       },
     ],
     chart: {
@@ -678,13 +708,19 @@ function renderDatabaseCharts(
         distributed: true, // allows different colors per bar
       },
     },
-    dataLabels: { enabled: true, style: { fontSize: "10px" } },
+    dataLabels: {
+      enabled: true,
+      style: { fontSize: "10px" },
+      formatter: function (val) {
+        return `${Number(val).toFixed(1)}%`;
+      },
+    },
     xaxis: {
       categories: ["EUI", "GHG", "Water"],
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
-    yaxis: { max: 100, tickAmount: 4 },
+    yaxis: { min: 0, max: 100, tickAmount: 4 },
     colors: ["#f1b44c", "#f46a6a", "#50a5f1"], // Warning, Danger, Info
     legend: { show: false },
   };
