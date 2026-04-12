@@ -79,9 +79,20 @@ const resultType = document.getElementById("result-type");
 const resultSqft = document.getElementById("result-sqft");
 const resultGrade = document.getElementById("result-grade");
 const resultConfidence = document.getElementById("result-confidence");
+const databaseMetrics = document.getElementById("database-metrics");
+const resultEnergyStar = document.getElementById("result-energy-star");
+const resultCompositeScore = document.getElementById("result-composite-score");
+const resultEuiPercentile = document.getElementById("result-eui-percentile");
+const resultGhgPercentile = document.getElementById("result-ghg-percentile");
+const resultWaterPercentile = document.getElementById(
+  "result-water-percentile",
+);
 
 window.currentDisplayName = "";
 window.currentAddressMatches = [];
+window.currentCoords = "";
+window.currentLat = null;
+window.currentLon = null;
 
 // ================= STAGE ANIMATION LOGIC =================
 
@@ -203,18 +214,48 @@ function showMessage(message, isError = false) {
   statusText.classList.toggle("text-muted", !isError);
 }
 
+function applyGradeStyle(grade) {
+  const normalizedGrade = String(grade || "")
+    .trim()
+    .toUpperCase();
+  const gradeClassMap = {
+    A: "grade-a",
+    "A-": "grade-a",
+    "A+": "grade-a",
+    B: "grade-b",
+    "B+": "grade-b",
+    "B-": "grade-b",
+    C: "grade-c",
+    "C+": "grade-c",
+    "C-": "grade-c",
+    D: "grade-d",
+    F: "grade-d",
+  };
+
+  resultGrade.classList.remove(
+    "grade-a",
+    "grade-b",
+    "grade-c",
+    "grade-d",
+    "grade-default",
+  );
+
+  resultGrade.classList.add(gradeClassMap[normalizedGrade] || "grade-default");
+}
+
 function showResult(data) {
   // Trigger animation to show Result panel
   revealPanel(resultPanel);
 
-  if (data.status === "found_in_database") {
+  const isDatabaseMatch = data.status === "found_in_database";
+
+  if (isDatabaseMatch) {
     resultStatus.innerHTML =
       '<i class="bi bi-check-circle me-1"></i>Matched record';
     resultBadge.textContent = "Verified Data";
     resultBadge.className = "badge rounded-pill bg-success text-white";
   } else if (data.status === "ai_predicted") {
-    resultStatus.innerHTML =
-      '<i class="bi bi-robot me-1"></i>AI Estimate';
+    resultStatus.innerHTML = '<i class="bi bi-robot me-1"></i>AI Estimate';
     resultBadge.textContent = "AI Prediction";
     resultBadge.className = "badge rounded-pill bg-info text-dark";
   }
@@ -235,14 +276,46 @@ function showResult(data) {
   resultSqft.textContent = data.sqft ? Number(data.sqft).toLocaleString() : "-";
   resultGrade.textContent = data.grade || "-";
 
-  if (data.grade === "A")
-    resultGrade.className = "d-block fs-5 fw-bold text-success";
-  else if (data.grade === "B")
-    resultGrade.className = "d-block fs-5 fw-bold text-primary";
-  else if (data.grade === "C")
-    resultGrade.className = "d-block fs-5 fw-bold text-warning";
-  else if (data.grade === "D")
-    resultGrade.className = "d-block fs-5 fw-bold text-danger";
+  if (isDatabaseMatch) {
+    databaseMetrics.classList.remove("d-none");
+    resultEnergyStar.textContent = data.energy_star_score ?? "N/A";
+    resultCompositeScore.textContent = data.composite_score ?? "-";
+    resultEuiPercentile.textContent = data.eui_percentile ?? "-";
+    resultGhgPercentile.textContent = data.ghg_percentile ?? "-";
+    resultWaterPercentile.textContent = data.water_percentile ?? "-";
+
+    const toNumberOrZero = (value) => {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    if (typeof ApexCharts !== "undefined") {
+      renderDatabaseCharts(
+        toNumberOrZero(data.energy_star_score),
+        toNumberOrZero(data.composite_score),
+        toNumberOrZero(data.eui_percentile),
+        toNumberOrZero(data.ghg_percentile),
+        toNumberOrZero(data.water_percentile),
+      );
+    }
+  } else {
+    databaseMetrics.classList.add("d-none");
+
+    if (energyStarChartObj) {
+      energyStarChartObj.destroy();
+      energyStarChartObj = null;
+    }
+    if (compositeChartObj) {
+      compositeChartObj.destroy();
+      compositeChartObj = null;
+    }
+    if (percentilesChartObj) {
+      percentilesChartObj.destroy();
+      percentilesChartObj = null;
+    }
+  }
+
+  applyGradeStyle(data.grade);
 
   const sourceInfo = data.confidence || "AI Prediction";
   resultConfidence.textContent = `${sourceInfo} | Location: ${window.currentCoords || "N/A"}`;
@@ -327,6 +400,16 @@ async function updateAddressSuggestions() {
   }
 }
 
+async function geocodeAddress(query) {
+  const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    `${query}, Philadelphia, PA`,
+  )}&limit=8`;
+  const geoResponse = await fetch(geoUrl, {
+    headers: { "User-Agent": "PhillyPropertySearchApp/1.0" },
+  });
+  return geoResponse.json();
+}
+
 async function runSearch() {
   const query = input.value.trim();
   if (!query) return;
@@ -351,11 +434,7 @@ async function runSearch() {
       showMessage("Address not in database. Geocoding location...", false);
 
       try {
-        const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ", Philadelphia, PA")}&limit=8`;
-        const geoResponse = await fetch(geoUrl, {
-          headers: { "User-Agent": "PhillyPropertySearchApp/1.0" },
-        });
-        const geoData = await geoResponse.json();
+        const geoData = await geocodeAddress(query);
 
         if (geoData && geoData.length > 0) {
           const { lat, lon, display_name } = geoData[0];
@@ -367,6 +446,8 @@ async function runSearch() {
             )
             .filter(Boolean);
 
+          window.currentLat = lat;
+          window.currentLon = lon;
           window.currentCoords = `${lat}, ${lon}`;
           window.currentDisplayName =
             typeof display_name === "string"
@@ -388,6 +469,8 @@ async function runSearch() {
           }
         } else {
           window.currentCoords = "Coordinates not found";
+          window.currentLat = null;
+          window.currentLon = null;
           window.currentDisplayName = "";
           window.currentAddressMatches = [];
           hideMultipleAddressHint();
@@ -399,6 +482,8 @@ async function runSearch() {
       } catch (geoErr) {
         console.error("Geocoding error:", geoErr);
         window.currentCoords = "Geocoding service unavailable";
+        window.currentLat = null;
+        window.currentLon = null;
         window.currentDisplayName = "";
         window.currentAddressMatches = [];
         hideMultipleAddressHint();
@@ -410,9 +495,24 @@ async function runSearch() {
     }
 
     window.currentCoords = "Verified Database Record";
+    window.currentLat = null;
+    window.currentLon = null;
     window.currentDisplayName = "";
     window.currentAddressMatches = [];
     hideMultipleAddressHint();
+
+    try {
+      const geoData = await geocodeAddress(data.address || query);
+
+      if (geoData && geoData.length > 0) {
+        const { lat, lon } = geoData[0];
+        window.currentLat = lat;
+        window.currentLon = lon;
+        window.currentCoords = `${lat}, ${lon}`;
+      }
+    } catch (geoErr) {
+      console.error("Geocoding error:", geoErr);
+    }
 
     showResult(data);
     showMessage(`Showing exact match from city dataset.`);
@@ -425,10 +525,6 @@ async function runSearch() {
 }
 
 async function runAIPrediction() {
-  const sqft = aiSqft.value;
-  const year = aiYear.value;
-  const type = aiType.value;
-
   const coords =
     window.currentCoords && window.currentCoords.includes(",")
       ? window.currentCoords.split(",")
@@ -439,7 +535,7 @@ async function runAIPrediction() {
     '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Calculating...';
 
   try {
-    const url = `${apiBase}/api/predict?sqft=${sqft}&year_built=${year}&property_type=${encodeURIComponent(type)}&lat=${coords[0].trim()}&lon=${coords[1].trim()}`;
+    const url = `${apiBase}/api/predict?lat=${coords[0].trim()}&lon=${coords[1].trim()}`;
     const response = await fetch(url, defaultFetchOptions);
     const data = await response.json();
 
@@ -448,6 +544,12 @@ async function runAIPrediction() {
     if (window.currentDisplayName && window.currentAddressMatches.length <= 1) {
       data.name = window.currentDisplayName;
     }
+
+    data.name =
+      data.name || window.currentDisplayName || input.value.trim() || "Location-Based Estimate";
+    data.address =
+      data.address || window.currentDisplayName || input.value.trim().toUpperCase();
+    data.type = data.type || "Location-based estimate";
 
     // Cross-fade to final result smoothly
     resetPanels();
@@ -478,8 +580,10 @@ input.addEventListener("keydown", function (event) {
   if (event.key === "Escape") clearSuggestions();
 });
 
-aiForm.addEventListener("submit", function (event) {
-  event.preventDefault();
+
+
+aiForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
   runAIPrediction();
 });
 
@@ -490,4 +594,122 @@ if (multiAddressInfoBtn) {
 
 if (multiAddressCloseBtn) {
   multiAddressCloseBtn.addEventListener("click", closeMultipleAddressPopup);
+}
+
+// CHARTS
+// Keep track of chart instances so we can destroy them on new searches
+let energyStarChartObj = null;
+let compositeChartObj = null;
+let percentilesChartObj = null;
+
+function renderDatabaseCharts(
+  energyScore,
+  compositeScore,
+  euiPercent,
+  ghgPercent,
+  waterPercent,
+) {
+  // 1. Energy Star Radial Bar (Skote Primary Color)
+  var energyOptions = {
+    series: [energyScore || 0],
+    chart: { height: 220, type: "radialBar" },
+    plotOptions: {
+      radialBar: {
+        hollow: { size: "65%" },
+        dataLabels: {
+          name: { show: false },
+          value: {
+            fontSize: "24px",
+            fontWeight: 600,
+            color: "#495057",
+            formatter: function (val) {
+              return val;
+            },
+          },
+        },
+      },
+    },
+    colors: ["#556ee6"], // Skote primary
+    stroke: { lineCap: "round" },
+  };
+
+  // 2. Composite Score Radial Bar (Skote Success Color)
+  var compositeOptions = {
+    series: [compositeScore || 0],
+    chart: { height: 220, type: "radialBar" },
+    plotOptions: {
+      radialBar: {
+        hollow: { size: "65%" },
+        dataLabels: {
+          name: { show: false },
+          value: {
+            fontSize: "24px",
+            fontWeight: 600,
+            color: "#495057",
+            formatter: function (val) {
+              return val;
+            },
+          },
+        },
+      },
+    },
+    colors: ["#34c38f"], // Skote success
+    stroke: { lineCap: "round" },
+  };
+
+  // 3. Percentiles Column Chart (Skote Warning, Danger, Info colors)
+  var percentilesOptions = {
+    series: [
+      {
+        name: "Percentile",
+        data: [euiPercent || 0, ghgPercent || 0, waterPercent || 0],
+      },
+    ],
+    chart: {
+      type: "bar",
+      height: 200,
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "45%",
+        borderRadius: 4,
+        distributed: true, // allows different colors per bar
+      },
+    },
+    dataLabels: { enabled: true, style: { fontSize: "10px" } },
+    xaxis: {
+      categories: ["EUI", "GHG", "Water"],
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: { max: 100, tickAmount: 4 },
+    colors: ["#f1b44c", "#f46a6a", "#50a5f1"], // Warning, Danger, Info
+    legend: { show: false },
+  };
+
+  // Destroy existing charts if they exist
+  if (energyStarChartObj) energyStarChartObj.destroy();
+  if (compositeChartObj) compositeChartObj.destroy();
+  if (percentilesChartObj) percentilesChartObj.destroy();
+
+  // Render new charts
+  energyStarChartObj = new ApexCharts(
+    document.querySelector("#energy-star-chart"),
+    energyOptions,
+  );
+  energyStarChartObj.render();
+
+  compositeChartObj = new ApexCharts(
+    document.querySelector("#composite-score-chart"),
+    compositeOptions,
+  );
+  compositeChartObj.render();
+
+  percentilesChartObj = new ApexCharts(
+    document.querySelector("#percentiles-chart"),
+    percentilesOptions,
+  );
+  percentilesChartObj.render();
 }

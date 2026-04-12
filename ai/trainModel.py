@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
@@ -8,6 +9,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 import joblib
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_PATH = PROJECT_ROOT / 'ai' / 'philly_buildings.csv'
+MODEL_PATH = PROJECT_ROOT / 'property_rating_model.pkl'
 
 # ---------------------------------------------------------
 # CONFIGURATION
@@ -22,7 +27,7 @@ SCORE_WEIGHTS = {
 
 print("Loading data...")
 # Load the data
-df = pd.read_csv('ai/philly_buildings.csv', on_bad_lines='skip')
+df = pd.read_csv(DATA_PATH, on_bad_lines='skip')
 df.columns = df.columns.str.strip()
 
 # ---------------------------------------------------------
@@ -100,9 +105,22 @@ df['composite_score'] = (
 # ---------------------------------------------------------
 # NUANCE UPGRADE 3: Absolute Binning
 # ---------------------------------------------------------
-bins = [0.0, 0.20, 0.50, 0.80, 1.0]
-labels = ['D', 'C', 'B', 'A']
-df['Grade'] = pd.cut(df['composite_score'], bins=bins, labels=labels, include_lowest=True)
+grade_rules = [
+    (df['composite_score'] < 0.22, 'F'),
+    (df['composite_score'] < 0.30, 'D'),
+    (df['composite_score'] < 0.36, 'C-'),
+    (df['composite_score'] < 0.42, 'C'),
+    (df['composite_score'] < 0.49, 'C+'),
+    (df['composite_score'] < 0.56, 'B-'),
+    (df['composite_score'] < 0.63, 'B'),
+    (df['composite_score'] < 0.70, 'B+'),
+    (df['composite_score'] < 0.79, 'A-'),
+]
+
+grade_choices = [grade for condition, grade in grade_rules]
+grade_conditions = [condition for condition, grade in grade_rules]
+
+df['Grade'] = np.select(grade_conditions, grade_choices, default='A')
 
 print("\nPeer-Adjusted Grade Distribution:")
 print(df['Grade'].value_counts())
@@ -116,27 +134,20 @@ df.to_csv('philly_buildings_graded.csv', index=False)
 # ---------------------------------------------------------
 print("\nPreparing ML Pipeline...")
 
-# Define Features (X) and Target (y) using the mapped spatial columns
-X = df[['year_built', 'total_floor_area_bld_pk_ft2', 'primary_prop_type_epa_calc', 'latitude', 'longitude']]
+# Define Features (X) and Target (y) using location only
+X = df[['latitude', 'longitude']]
 y = df['Grade']
 
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Preprocessing Pipelines
-numeric_features = ['year_built', 'total_floor_area_bld_pk_ft2', 'latitude', 'longitude']
+# Preprocessing pipeline for numeric coordinates only
+numeric_features = ['latitude', 'longitude']
 numeric_transformer = SimpleImputer(strategy='median')
-
-categorical_features = ['primary_prop_type_epa_calc']
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='Unknown')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))
-])
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', numeric_transformer, numeric_features),
-        ('cat', categorical_transformer, categorical_features)
+        ('num', numeric_transformer, numeric_features)
     ])
 
 # Train Random Forest
@@ -154,5 +165,5 @@ y_pred = model_pipeline.predict(X_test)
 print(classification_report(y_test, y_pred))
 
 # Export Model
-joblib.dump(model_pipeline, 'property_rating_model.pkl')
-print("\nSuccess! Model saved as 'property_rating_model.pkl'")
+joblib.dump(model_pipeline, MODEL_PATH)
+print(f"\nSuccess! Model saved as '{MODEL_PATH}'")

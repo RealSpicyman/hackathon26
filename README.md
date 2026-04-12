@@ -9,7 +9,7 @@ The app tries a city benchmark dataset first, then falls back to an AI estimate 
 - Search by street address with live suggestions
 - Return verified benchmark data when available
 - Use geocoding when an address is missing from the dataset
-- Predict a grade (`A` to `D`) using a trained ML model when needed
+- Predict a grade (`A` to `F`) using a trained ML model when needed
 - Handle multiple location matches in the UI
 
 ## Project Structure
@@ -143,7 +143,7 @@ python ai/trainModel.py
 This script will:
 - load `ai/philly_buildings.csv`
 - clean and engineer features
-- build grades (`A`-`D`) using weighted scoring
+- build grades (`A`-`F`) using weighted scoring
 - train a Random Forest pipeline
 - output:
   - `philly_buildings_graded.csv`
