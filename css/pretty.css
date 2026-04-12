@@ -1,6 +1,6 @@
 :root {
   --bg: white;
-  --bg-accent: #a4c6a6;
+  --bg-accent: #8ad0b3;
   transition: --bg-accent 0.5s ease-in-out;
 }
 
@@ -282,10 +282,12 @@ h1 {
 
 .fade-in-text {
   font-size: 20px;
-  margin-bottom: 30px;
   animation: fadeIn 5s ease-in forwards;
   display: inline;
   float: left;
+  font-weight: bold;
+  color:rgb(8, 65, 50);
+  transform: translateY(-67px);
 }
 
 .skyline {
@@ -293,5 +295,7 @@ h1 {
     bottom:0;
     z-index:-1;
     opacity:25%;
+    filter: hue-rotate(75deg) saturate(1.2) contrast(1.1);
+    brightness: .9;
 
 }

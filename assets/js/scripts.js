@@ -96,6 +96,7 @@ startBtn.addEventListener("click", () => {
     setTimeout(() => {
       stage2.classList.add("visible");
       document.documentElement.style.setProperty('--bg-accent', '#bea4c6')
+      document.body.style.overflowY = 'auto';
       input.focus(); // Auto-focus input for UX
     }, 50);
   }, 600); // Matches CSS transition duration
