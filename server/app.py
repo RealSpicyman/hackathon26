@@ -24,6 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATASET_PATH = PROJECT_ROOT / "philly_buildings_graded.csv"
 MODEL_PATH = PROJECT_ROOT / "property_rating_model.pkl"
 ASSETS_PATH = PROJECT_ROOT / "assets"
+CSS_PATH = PROJECT_ROOT / "css"
 INDEX_PATH = PROJECT_ROOT / "index.html"
 
 # Check if files actually exist before trying to read them
@@ -45,6 +46,7 @@ model = joblib.load(MODEL_PATH)
 print("Brain successfully loaded!")
 
 app.mount("/assets", StaticFiles(directory=str(ASSETS_PATH)), name="assets")
+app.mount("/css", StaticFiles(directory=str(CSS_PATH)), name="css")
 
 
 # --- UPDATED: Serve the HTML file when someone visits the root URL ---
@@ -69,6 +71,13 @@ def search_property(address: str):
         if prop_name == 'nan':
             prop_name = "Property Name Not Provided"
 
+        # Safely handle the EPA Energy Star Score (some buildings don't have one)
+        energy_star = best_match['energy_star_score']
+        if pd.isna(energy_star) or str(energy_star).strip().lower() == 'nan':
+            energy_star = "N/A"
+        else:
+            energy_star = int(energy_star)
+
         return {
             "status": "found_in_database",
             "name": prop_name,
@@ -76,13 +85,17 @@ def search_property(address: str):
             "type": str(best_match['primary_prop_type_epa_calc']),
             "sqft": int(best_match['total_floor_area_bld_pk_ft2']),
             "grade": str(best_match['Grade']),
+            # --- NEW TIER 1 / UNDERLYING METRICS ---
+            "energy_star_score": energy_star,
+            "composite_score": round(float(best_match['composite_score']) * 100, 1),
+            "eui_percentile": round(float(best_match['eui_score']) * 100, 1),
+            "ghg_percentile": round(float(best_match['ghg_score']) * 100, 1),
+            "water_percentile": round(float(best_match['water_score']) * 100, 1),
             "confidence": "100% (Calculated from City Benchmarks)"
         }
     
     # If the code makes it down here, it MUST return this dictionary!
     return {"error": "Property not found in the 2024 Benchmarking Dataset."}
-
-
 @app.get("/api/suggest")
 def suggest_addresses(query: str):
     """
@@ -103,37 +116,35 @@ def suggest_addresses(query: str):
  
 # AI MODEL PREDICTION
 @app.get("/api/predict")
-def predict_property_grade(sqft: int, year_built: int, property_type: str, lat: float, lon: float):
-    """
-    This endpoint uses the trained Machine Learning model to predict a grade.
-    Example: /api/predict?sqft=65000&year_built=2015&property_type=Office&lat=39.95&lon=-75.16
-    """
+def predict_property_grade(lat: float, lon: float):
     try:
-        # 1. Package the user's input into a Pandas DataFrame.
-        # Ensure column names match EXACTLY what the model saw during training.
+        # 1. Provide default values for the features the model expects
+        # These should ideally be the median/mode of your training data
         input_data = pd.DataFrame([{
-            'year_built': year_built,
-            'total_floor_area_bld_pk_ft2': sqft,
-            'primary_prop_type_epa_calc': property_type,
             'latitude': lat,
-            'longitude': lon
+            'longitude': lon,
+            'total_floor_area_bld_pk_ft2': 50000,  # Average SqFt placeholder
+            'year_built': 1960,                   # Average Year placeholder
+            'primary_prop_type_epa_calc': 'Office' # Most common type placeholder
         }])
 
-        # 2. Feed the data to the AI model
+        # 2. Reorder columns if necessary (some models require the exact training order)
+        # Ensure these are in the EXACT order the model was trained on
+        column_order = ['year_built', 'total_floor_area_bld_pk_ft2', 
+                        'primary_prop_type_epa_calc', 'latitude', 'longitude']
+        input_data = input_data[column_order]
+
+        # 3. Feed the data to the AI model
         prediction_array = model.predict(input_data)
         predicted_grade = prediction_array[0]
 
-        # 3. Return the AI's answer
         return {
             "status": "ai_predicted",
-            "name": "AI Generated Estimate",
-            "type": property_type,
-            "sqft": sqft,
-            "year_built": year_built,
+            "name": "Location-Based Estimate",
             "grade": str(predicted_grade),
-            "confidence": f"AI Estimated (Location: {lat:.4f}, {lon:.4f})"
+            "coordinates": {"lat": lat, "lon": lon},
+            "confidence": "AI Estimated (Location-only mode)"
         }
         
     except Exception as e:
-        # This will now catch if the model expects different column names
         return {"error": f"AI Prediction Failed: {str(e)}"}

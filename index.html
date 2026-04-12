@@ -1,242 +1,310 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Philadelphia Property Search</title>
+    <link rel="icon" type="image/png" href="assets/img/AddressMeFavi.png" />
 
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="assets/css/icons.min.css" />
     <link rel="stylesheet" href="assets/css/app.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="css/pretty.css"/>
+</head>
 
-    <style>
-      #custom-address-options {
-        z-index: 1060;
-      }
-      #custom-address-options .dropdown-item {
-        cursor: pointer;
-        transition: background-color 0.15s ease-in-out;
-      }
-      #custom-address-options .dropdown-item:active {
-        background-color: #f8f9fa;
-        color: inherit;
-      }
-    </style>
-  </head>
-  <body class="bg-light">
-    <main class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-12 col-xl-10">
-          <section class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-body p-4 p-md-5">
-              <div class="d-flex flex-column gap-2 mb-4">
-                <span
-                  class="badge rounded-pill bg-primary text-white align-self-start"
-                  >Property lookup</span
-                >
-                <h1 class="display-6 fw-semibold mb-0">
-                  Search up an address!
-                </h1>
-                <p class="text-muted fs-5 mb-0">Type a street address</p>
-              </div>
+<body class="bg-light">
+    <main class="container py-5 position-relative">
 
-              <form
-                id="search-form"
-                class="row g-3 align-items-center"
-                autocomplete="off"
-              >
-                <div class="col-12 col-lg-9 position-relative">
-                  <label class="visually-hidden" for="address-input"
-                    >Address</label
-                  >
-                  <input
-                    id="address-input"
-                    type="text"
-                    placeholder="e.g. 123 Market St"
-                    class="form-control form-control-lg"
-                    required
-                  />
+        <div id="stage-1" class="animate-stage visible text-center w-100">
+            <a href="index.html" aria-label="Refresh page" onclick="window.location.reload(); return false;" class="d-inline-block mb-5">
+                <img src="assets/img/wordmark.png" alt="Project Logo" class="img-fluid" style="max-width: 460px; width: 100%; height: auto;" />
+            </a>
+            <p class="fade-in-text">Property Evaluation Made Easy</p>
+            <button id="start-btn" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fs-4 shadow-sm waves-effect waves-light">
+                Start <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+            <button id="about-btn" type="button" class="btn btn-outline-secondary rounded-pill px-4 py-2 mt-3">
+                About Us <i class="bi bi-info-circle ms-2"></i>
+            </button>
 
-                  <ul
-                    id="custom-address-options"
-                    class="dropdown-menu w-100 shadow rounded-3 border-0 mt-2"
-                    style="max-height: 320px; overflow-y: auto"
-                  ></ul>
+            <section id="about-card" class="about-card card border-0 shadow-sm rounded-4 mt-3" aria-live="polite">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-semibold mb-2">About Us</h2>
+                    <p class="mb-0 text-muted">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
                 </div>
-                <div class="col-12 col-lg-3 d-grid">
-                  <button type="submit" class="btn btn-primary btn-lg">
-                    Search
-                  </button>
-                </div>
-              </form>
-
-              <p id="status-text" class="small mt-3 mb-0 text-muted">
-                Enter an address to search the dataset.
-              </p>
-            </div>
-          </section>
-
-          <section
-            id="ai-panel"
-            class="card border-0 shadow-sm rounded-4 mb-4 d-none"
-          >
-            <div
-              class="card-body p-4 bg-white rounded-4 border border-warning border-2"
-            >
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="badge bg-warning text-dark">Not in Database</span>
-                <h3 class="h5 fw-semibold mb-0">AI Prediction Required</h3>
-              </div>
-              <p class="text-muted small mb-4">
-                We couldn't find exact utility data for that address. Enter the
-                building's basic characteristics to generate an AI-estimated
-                efficiency grade.
-              </p>
-
-              <form id="ai-form" class="row g-3">
-                <div class="col-md-4">
-                  <label for="ai-sqft" class="form-label small fw-bold"
-                    >Square Footage</label
-                  >
-                  <input
-                    type="number"
-                    id="ai-sqft"
-                    class="form-control"
-                    placeholder="e.g. 65000"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label for="ai-year" class="form-label small fw-bold"
-                    >Year Built</label
-                  >
-                  <input
-                    type="number"
-                    id="ai-year"
-                    class="form-control"
-                    placeholder="e.g. 1985"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label for="ai-type" class="form-label small fw-bold"
-                    >Property Type</label
-                  >
-                  <select id="ai-type" class="form-select" required>
-                    <option value="" disabled selected>Select Type...</option>
-                    <option value="Office">Office</option>
-                    <option value="Multifamily Housing">
-                      Multifamily Housing
-                    </option>
-                    <option value="Retail Store">Retail Store</option>
-                    <option value="Self-Storage Facility">
-                      Self-Storage Facility
-                    </option>
-                    <option value="Wholesale Distribution Center">
-                      Warehouse / Distribution
-                    </option>
-                  </select>
-                </div>
-                <div class="col-12 text-end mt-4">
-                  <button type="submit" class="btn btn-dark" id="ai-submit-btn">
-                    Predict Grade with AI
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          <section
-            id="result-panel"
-            class="card border-0 shadow-sm rounded-4 d-none"
-            aria-live="polite"
-          >
-            <div class="card-body p-4 p-md-5">
-              <div
-                class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-4"
-              >
-                <div>
-                  <p
-                    id="result-status"
-                    class="text-uppercase text-muted fw-semibold small mb-2"
-                  >
-                    Result
-                  </p>
-                  <h2 id="result-title" class="h3 fw-semibold mb-0">
-                    Property
-                  </h2>
-                </div>
-                <span
-                  id="result-badge"
-                  class="badge rounded-pill bg-secondary text-white"
-                  >Matched</span
-                >
-              </div>
-
-              <div class="row g-3">
-                <div class="col-12 col-md-6">
-                  <div class="border rounded-4 bg-light p-3 h-100">
-                    <span
-                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
-                      >Address</span
-                    >
-                    <strong id="result-address" class="d-block fs-6 fw-semibold"
-                      >-</strong
-                    >
-                  </div>
-                </div>
-                <div class="col-12 col-md-6">
-                  <div class="border rounded-4 bg-light p-3 h-100">
-                    <span
-                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
-                      >Type</span
-                    >
-                    <strong id="result-type" class="d-block fs-6 fw-semibold"
-                      >-</strong
-                    >
-                  </div>
-                </div>
-                <div class="col-12 col-md-6">
-                  <div class="border rounded-4 bg-light p-3 h-100">
-                    <span
-                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
-                      >Square Footage</span
-                    >
-                    <strong id="result-sqft" class="d-block fs-6 fw-semibold"
-                      >-</strong
-                    >
-                  </div>
-                </div>
-                <div class="col-12 col-md-6">
-                  <div class="border rounded-4 bg-light p-3 h-100">
-                    <span
-                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
-                      >Grade</span
-                    >
-                    <strong id="result-grade" class="d-block fs-6 fw-semibold"
-                      >-</strong
-                    >
-                  </div>
-                </div>
-                <div class="col-12">
-                  <div class="border rounded-4 bg-light p-3">
-                    <span
-                      class="d-block text-muted small text-uppercase fw-semibold mb-1"
-                      >Confidence / Source</span
-                    >
-                    <strong
-                      id="result-confidence"
-                      class="d-block fs-6 fw-semibold"
-                      >-</strong
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+            </section>
         </div>
-      </div>
+
+        <div id="main-content" class="d-none">
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-10">
+
+                    <div id="stage-2" class="animate-stage">
+                        <div class="text-center mb-4">
+                            <a href="index.html" aria-label="Refresh page" onclick="window.location.reload(); return false;" class="d-inline-block">
+                                <img src="assets/img/wordmark.png" alt="Project Logo" class="img-fluid" style="max-width: 240px; height: auto;" />
+                            </a>
+                        </div>
+                        <section class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-body p-4 p-md-5">
+                                <div class="d-flex flex-column gap-2 mb-4">
+                                    <span class="badge rounded-pill bg-primary text-white align-self-start">Property
+                                        lookup</span>
+                                    <h1 class="display-6 fw-semibold mb-0">
+                                        Address Me!
+                                    </h1>
+                                    <p class="text-muted fs-5 mb-0">Type a street address</p>
+                                </div>
+
+                                <form id="search-form" class="row g-3 align-items-center" autocomplete="off">
+                                    <div class="col-12 col-lg-9 position-relative">
+                                        <label class="visually-hidden" for="address-input">Address</label>
+                                        <input id="address-input" type="text" placeholder="e.g. 123 Market St"
+                                            class="form-control form-control-lg" required />
+
+                                        <ul id="custom-address-options"
+                                            class="dropdown-menu w-100 shadow rounded-3 border-0 mt-2 z-3"
+                                            style="max-height: 320px; overflow-y: auto"></ul>
+                                    </div>
+                                    <div class="col-12 col-lg-3 d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg waves-effect waves-light">
+                                            Search
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <p id="status-text" class="small mt-3 mb-0 text-muted">
+                                    Enter an address to search the dataset.
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="stage-3" class="animate-stage">
+
+                        <section id="ai-panel" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+                            <div class="card-body p-4 bg-white rounded-4 border border-warning border-2">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge bg-warning text-dark">Not in Database</span>
+                                    <h3 class="h5 fw-semibold mb-0">AI Prediction Required</h3>
+                                </div>
+                                <p class="text-muted small mb-4">
+                                    We couldn't find exact utility data for that address.
+                                    Press the button below to generate an efficiency grade based on the building's
+                                    <strong>geographic location</strong>.
+                                </p>
+
+                                <form id="ai-form" class="text-center">
+                                    <button type="submit" class="btn btn-dark btn-lg px-5 waves-effect waves-light"
+                                        id="ai-submit-btn">
+                                        Predict Grade with AI Proximity
+                                    </button>
+                                </form>
+                            </div>
+                        </section>
+
+                        <section id="result-panel" class="card border-0 shadow-sm rounded-4 d-none" aria-live="polite">
+                            <div class="card-body p-4 p-md-5">
+                                <div
+                                    class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-2">
+                                    <div>
+                                        <p id="result-status"
+                                            class="text-uppercase text-success fw-semibold small mb-2">
+                                            <i class="mdi mdi-check-circle-outline me-1"></i>AI Estimate
+                                        </p>
+
+                                        <div id="multi-address-hint" class="d-flex align-items-center mb-3 d-none">
+                                            <span class="text-warning fw-semibold">Multiple Locations Found</span>
+                                            <button type="button" id="multi-address-info-btn"
+                                                class="btn btn-sm btn-outline-secondary rounded-circle py-0 px-1 ms-2"
+                                                data-bs-toggle="tooltip" data-bs-placement="right"
+                                                title="Show all matched addresses"
+                                                aria-label="Show all matched addresses">
+                                                <i class="bi bi-info-lg"></i>
+                                            </button>
+                                        </div>
+
+                                        <h2 id="result-title" class="h3 fw-semibold mb-0">Property</h2>
+                                    </div>
+                                    <span id="result-badge"
+                                        class="badge rounded-pill bg-secondary text-white">Matched</span>
+                                </div>
+
+                                <div class="row g-3 mt-3 align-items-stretch">
+
+                                    <div class="col-12 col-lg-6">
+                                        <div
+                                            class="border rounded-4 shadow-sm grade-hero-card p-4 p-md-5 text-center h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <span
+                                                class="d-block text-muted small text-uppercase fw-bold mb-3 tracking-wide">
+                                                Overall Efficiency Grade
+                                            </span>
+
+                                            <div class="grade-circle-wrapper mt-2">
+                                                <div class="grade-circle">
+                                                    <strong id="result-grade"
+                                                        class="display-1 fw-bolder mb-0">C</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-lg-6">
+                                        <div class="row g-3 h-100">
+                                            <div class="col-12 col-md-6">
+                                                <div
+                                                    class="border rounded-4 bg-light p-3 h-100 d-flex flex-column justify-content-center">
+                                                    <span
+                                                        class="d-block text-muted small text-uppercase fw-semibold mb-1">Address</span>
+                                                    <strong id="result-address"
+                                                        class="d-block fs-6 fw-semibold">-</strong>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 col-md-6">
+                                                <div
+                                                    class="border rounded-4 bg-light p-3 h-100 d-flex flex-column justify-content-center">
+                                                    <span
+                                                        class="d-block text-muted small text-uppercase fw-semibold mb-1">Type</span>
+                                                    <strong id="result-type" class="d-block fs-6 fw-semibold">-</strong>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 col-md-6">
+                                                <div
+                                                    class="border rounded-4 bg-light p-3 h-100 d-flex flex-column justify-content-center">
+                                                    <span
+                                                        class="d-block text-muted small text-uppercase fw-semibold mb-1">Square
+                                                        Footage</span>
+                                                    <strong id="result-sqft" class="d-block fs-6 fw-semibold">-</strong>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 col-md-6">
+                                                <div
+                                                    class="border rounded-4 bg-light p-3 h-100 d-flex flex-column justify-content-center">
+                                                    <span
+                                                        class="d-block text-muted small text-uppercase fw-semibold mb-1">Confidence
+                                                        / Source</span>
+                                                    <strong id="result-confidence"
+                                                        class="d-block fs-6 fw-semibold">-</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="database-metrics" class="mt-5 d-none">
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <h3 class="h6 text-uppercase fw-bold text-muted mb-0">Benchmark Details</h3>
+                                    </div>
+
+                                    <ul class="nav nav-pills benchmark-tabs mb-4" id="benchmark-tabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="benchmark-chart-tab" data-bs-toggle="pill"
+                                                data-bs-target="#benchmark-chart-pane" type="button" role="tab"
+                                                aria-controls="benchmark-chart-pane" aria-selected="true">
+                                                Charts
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="benchmark-legend-tab" data-bs-toggle="pill"
+                                                data-bs-target="#benchmark-legend-pane" type="button" role="tab"
+                                                aria-controls="benchmark-legend-pane" aria-selected="false">
+                                                Legend
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content" id="benchmark-tab-content">
+                                        <div class="tab-pane fade show active" id="benchmark-chart-pane" role="tabpanel"
+                                            aria-labelledby="benchmark-chart-tab" tabindex="0">
+                                            <div class="row g-4">
+                                                <div class="col-12 col-md-4">
+                                                    <div class="border rounded-4 bg-light p-3 h-100 text-center">
+                                                        <span
+                                                            class="d-block text-muted small text-uppercase fw-semibold mb-2">Energy
+                                                            Star Score</span>
+                                                        <div id="energy-star-chart" class="apex-charts" dir="ltr"></div>
+                                                        <span id="result-energy-star" class="d-none"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 col-md-4">
+                                                    <div class="border rounded-4 bg-light p-3 h-100 text-center">
+                                                        <span
+                                                            class="d-block text-muted small text-uppercase fw-semibold mb-2">Composite
+                                                            Score</span>
+                                                        <div id="composite-score-chart" class="apex-charts" dir="ltr"></div>
+                                                        <span id="result-composite-score" class="d-none"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 col-md-4">
+                                                    <div class="border rounded-4 bg-light p-3 h-100 text-center">
+                                                        <span
+                                                            class="d-block text-muted small text-uppercase fw-semibold mb-2">Percentiles</span>
+                                                        <div id="percentiles-chart" class="apex-charts" dir="ltr"></div>
+                                                        <span id="result-eui-percentile" class="d-none"></span>
+                                                        <span id="result-ghg-percentile" class="d-none"></span>
+                                                        <span id="result-water-percentile" class="d-none"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="benchmark-legend-pane" role="tabpanel"
+                                            aria-labelledby="benchmark-legend-tab" tabindex="0">
+                                            <div class="legend-card border rounded-4 bg-light p-4">
+                                                <h4 class="h6 fw-bold mb-3">How to read these metrics</h4>
+                                                <ul class="legend-list mb-0">
+                                                    <li><strong>Energy Star Score:</strong> Federal 1-100 efficiency score for many building types. Higher is better.</li>
+                                                    <li><strong>Composite Score:</strong> Weighted environmental performance score on a 0-100 scale. Higher is better.</li>
+                                                    <li><strong>EUI Percentile:</strong> Relative energy use intensity compared to similar properties (0-100).</li>
+                                                    <li><strong>GHG Percentile:</strong> Relative greenhouse gas performance compared to peers (0-100).</li>
+                                                    <li><strong>Water Percentile:</strong> Relative water efficiency compared to similar properties (0-100).</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <div class="modal fade" id="multi-address-popup" tabindex="-1" role="dialog" aria-labelledby="multi-address-title"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="multi-address-title">Matching OpenStreetMap addresses</h5>
+                    <button type="button" class="btn-close" id="multi-address-close-btn" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">These are the addresses returned for your street search.</p>
+                    <ul id="multi-address-list" class="mb-0 ps-3"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+        </script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
     <script src="assets/js/scripts.js"></script>
-  </body>
+
+    <img src="assets\img\skyline.svg" alt="Footer" class="skyline">
+</body>
+
 </html>
