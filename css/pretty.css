@@ -276,8 +276,10 @@ h1 {
 }
 
 .about-card {
-  width: min(90%, 640px);
+  width: min(92%, 720px);
   border: 2px solid #2f5d50 !important;
+  background: rgba(255, 255, 255, 0.94);
+  text-align: left;
   opacity: 0;
   transform: translateY(10px);
   max-height: 0;
@@ -293,12 +295,13 @@ h1 {
 .about-card .card-body p {
   font-size: 1.08rem;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .about-card.visible {
   opacity: 1;
   transform: translateY(0);
-  max-height: 520px;
+  max-height: 900px;
   pointer-events: auto;
 }
 
