@@ -1,4 +1,4 @@
-# Philadelphia Property Search
+# Address Me
 
 A FastAPI + JavaScript web app for searching Philadelphia properties and showing energy-efficiency grades.
 
